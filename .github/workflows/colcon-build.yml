@@ -1,0 +1,46 @@
+name: colcon-build-test
+on:
+  # Run this action whenever a pull request is made
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Note that we pass each job a different name to distinguish each linter job
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ros_distribution:
+          - humble
+
+        include:
+          - docker_image: rostooling/setup-ros-docker:ubuntu-jammy-ros-humble-ros-base-latest
+            ros_distribution: humble
+    container:
+      image: ${{ matrix.docker_image }}
+
+    steps:
+      - name: Install Dependencies Manually
+        run: |
+          rosdep update
+          sudo apt-get update
+          sudo apt-get install -y libunwind-dev
+          rosdep install --from-path . -i -y --rosdistro ${{ matrix.ros_distribution }}
+
+      - name: Check out Repository
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ros-tooling/setup-ros@0.7.0
+        with:
+          required-ros-distributions: humble
+
+      - name: Build
+        uses: ros-tooling/action-ros-ci@0.3.3
+        with:
+          package-name: navyu
+          target-ros2-distro: humble
+          import-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-tests: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
