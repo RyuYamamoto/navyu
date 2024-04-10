@@ -1,0 +1,17 @@
+navyu_simple_simulator:
+  ros__parameters:
+    period: 0.01
+
+    base_frame_id: "base_footprint"
+
+    joint_names: ["right_wheel_joint", "left_wheel_joint"]
+
+    covariance:
+      [
+        0.0225, 0.0,   0.0,   0.0,      0.0,      0.0,
+        0.0,   0.0225, 0.0,   0.0,      0.0,      0.0,
+        0.0,   0.0,   0.0225, 0.0,      0.0,      0.0,
+        0.0,   0.0,   0.0,   0.000625, 0.0,      0.0,
+        0.0,   0.0,   0.0,   0.0,      0.000625, 0.0,
+        0.0,   0.0,   0.0,   0.0,      0.0,      0.000625,
+      ]
