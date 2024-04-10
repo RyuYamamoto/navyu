@@ -1,0 +1,273 @@
+<?xml version="1.0"?>
+<robot name="sample_robot">
+
+  <link name="base_footprint"/>
+  <joint name="base_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.500 0.500 0.250"/>
+      </geometry>
+    </visual>
+
+    <collision>
+      <geometry>
+        <box size="0.500 0.500 0.250"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.500"/>
+      <inertia ixx="0.0020833333" ixy="0" ixz="0" iyy="0.0070833333" iyz="0" izz="0.0083333333"/>
+    </inertial>
+  </link>
+
+  <link name="left_wheel_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="black"/>
+    </visual>
+
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.500"/>
+      <inertia ixx="0.0013541667" ixy="0" ixz="0" iyy="0.0013541667" iyz="0" izz="0.0025"/>
+    </inertial>
+
+  </link>
+
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel_link"/>
+    <origin rpy="-1.5707 0 0" xyz="0.100 0.130 -0.05"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <link name="right_wheel_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="black"/>
+    </visual>
+
+    <collision>
+      <geometry>
+        <cylinder radius="0.1" length="0.05"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.500"/>
+      <inertia ixx="0.0013541667" ixy="0" ixz="0" iyy="0.0013541667" iyz="0" izz="0.0025"/>
+    </inertial>
+
+  </link>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel_link"/>
+    <origin rpy="1.5707 0 0" xyz="0.100 -0.130 -0.05"/>
+    <axis xyz="0 0 -1"/>
+  </joint>
+
+  <link name="caster_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+      <material name="green">
+        <color rgba="0 1 0 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+        <sphere radius="0.05"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.500"/>
+      <inertia ixx="0.00025" ixy="0" ixz="0" iyy="0.00025" iyz="0" izz="0.00025"/>
+    </inertial>
+
+  </link>
+
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_link"/>
+    <origin xyz="-0.150 0 -0.10"/>
+  </joint>
+
+  <!-- Hokuyo Laser -->
+  <link name="hokuyo_link">
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.1 0.1 0.1"/>
+      </geometry>
+    </collision>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.1 0.1 0.1"/>
+      </geometry>
+      <material name="">
+        <color rgba="1.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+
+    <inertial>
+      <mass value="1e-5" />
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+    </inertial>
+  </link>
+  <joint name="hokuyo_joint" type="fixed">
+    <axis xyz="0 1 0" />
+    <origin xyz="0.1 0 0.15" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="hokuyo_link"/>
+  </joint>
+
+  <!-- =============== Gazebo =============== -->
+  <gazebo reference="base_link">
+    <selfCollide>true</selfCollide>
+    <mu1 value="0.05" />
+    <mu2 value="0.05" />
+  </gazebo>
+
+  <gazebo reference="left_wheel_link">
+    <selfCollide>true</selfCollide>
+    <mu1 value="0.8" />
+    <mu2 value="0.8" />
+  </gazebo>
+
+  <gazebo reference="right_wheel_link">
+    <selfCollide>true</selfCollide>
+    <mu1 value="0.8" />
+    <mu2 value="0.8" />
+  </gazebo>
+
+  <gazebo reference="caster_link">
+    <selfCollide>true</selfCollide>
+    <!-- This caster is no frictional resistance. -->
+    <mu1 value="0.0" />
+    <mu2 value="0.0" />
+    </gazebo>
+
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+    </hardware>
+    <joint name="left_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-1</param>
+        <param name="max">1</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="right_wheel_joint">
+      <command_interface name="velocity">
+        <param name="min">-1</param>
+        <param name="max">1</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    </ros2_control>
+  <gazebo>
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      <ros>
+        <remapping>~/cmd_vel_unstamped:=/cmd_vel</remapping>
+        <remapping>~/odom:=/odom</remapping>
+      </ros>
+      <parameters>$(find navyu_simulator)/config/navyu_ros2_controller_params.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+  <!-- lidar plugin -->
+  <gazebo reference="hokuyo_link">
+    <sensor name="gazebo_lidar" type="ray">
+      <always_on>true</always_on>
+      <visualize>false</visualize>
+      <update_rate>40</update_rate>
+      <plugin filename="libgazebo_ros_ray_sensor.so" name="gazebo_lidar">
+        <ros>
+          <remapping>~/out:=scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>hokuyo_link</frame_name>
+      </plugin>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1.000000</resolution>
+            <min_angle>-1.57</min_angle>
+            <max_angle>1.57</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+    </sensor>
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="imu_link"/>
+  <gazebo reference="imu_link">
+    <gravity>true</gravity>
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>data</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>imu/data</topicName>
+        <bodyName>imu_link</bodyName>
+        <updateRateHZ>10.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>imu_link</frameName>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+</robot>
