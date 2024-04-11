@@ -67,7 +67,7 @@ def generate_launch_description():
     parameters=[{'use_sim_time': use_sim_time}],
     arguments=[
       "-topic", "/robot_description",
-      "-entity", "vmegarover",
+      "-entity", "sample_robot",
       "-x", "-9",
       "-y", "-17",
       "-z", "0.88",
