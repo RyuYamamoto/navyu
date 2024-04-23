@@ -1,0 +1,5 @@
+navyu_global_planner_node:
+  ros__parameters:
+    map_frame_id: "map"
+
+    lethal_costmap_threshold: 45
