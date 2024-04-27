@@ -47,12 +47,12 @@ ENV GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/ros2_ws/src/navyu/navyu_simulator/worl
 
 RUN mkdir -p "$HOME/.gazebo/models" && mkdir /tmp/models && \
     cd /tmp/models && \
-    for m in "cube_20k" "dumpster" "jersey_barrier" "ground_plane" "sun" "willowgarage"; do \ 
-    curl -Os "http://models.gazebosim.org/$m/model.tar.gz" && \  
-    tar -zvxf model.tar.gz && \  
-    cp -vfR $m "$HOME/.gazebo/models/"; \  
-    rm model.tar.gz; \  
-    done && \  
+    for m in "cube_20k" "dumpster" "jersey_barrier" "ground_plane" "sun" "willowgarage"; do \
+    curl -Os "http://models.gazebosim.org/$m/model.tar.gz" && \
+    tar -zvxf model.tar.gz && \
+    cp -vfR $m "$HOME/.gazebo/models/"; \
+    rm model.tar.gz; \
+    done && \
     cd .. && rm -r /tmp/models
 
 COPY entrypoint.sh /usr/bin/
