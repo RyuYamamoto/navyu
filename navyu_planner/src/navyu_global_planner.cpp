@@ -1,11 +1,15 @@
 #include "navyu_planner/navyu_global_planner.hpp"
 
+#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
+
 NavyuGlobalPlanner::NavyuGlobalPlanner(const rclcpp::NodeOptions & node_options)
 : Node("navyu_global_planner", node_options)
 {
-  map_frame_id_ = declare_parameter<std::string>("map_frame_id");
+  map_frame_ = declare_parameter<std::string>("map_frame");
+  base_frame_ = declare_parameter<std::string>("base_frame");
+  declare_parameter<double>("lethal_cost_threshold");
 
-  declare_parameter<double>("lethal_cost_threshold", 45);
+  broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
   goal_pose_subscriber_ = create_subscription<geometry_msgs::msg::PoseStamped>(
     "goal_pose", 5,
@@ -31,6 +35,27 @@ void NavyuGlobalPlanner::wait_for_costmap()
   }
 }
 
+bool NavyuGlobalPlanner::get_robot_pose(geometry_msgs::msg::Pose & robot_pose)
+{
+  geometry_msgs::msg::TransformStamped robot_pose_frame;
+
+  try {
+    robot_pose_frame = tf_buffer_.lookupTransform(
+      map_frame_, base_frame_, tf2::TimePointZero, tf2::durationFromSec(0.5));
+  } catch (tf2::TransformException & ex) {
+    RCLCPP_ERROR_STREAM(
+      get_logger(), "Can not get Transform " << map_frame_ << " to " << base_frame_);
+    return false;
+  }
+
+  robot_pose.position.x = robot_pose_frame.transform.translation.x;
+  robot_pose.position.y = robot_pose_frame.transform.translation.y;
+  robot_pose.position.z = robot_pose_frame.transform.translation.z;
+  robot_pose.orientation = robot_pose_frame.transform.rotation;
+
+  return true;
+}
+
 bool NavyuGlobalPlanner::plan(
   const geometry_msgs::msg::Pose start, const geometry_msgs::msg::Pose goal,
   std::vector<Node2D *> & path)
@@ -52,7 +77,7 @@ bool NavyuGlobalPlanner::plan(
 void NavyuGlobalPlanner::publish_path(std::vector<Node2D *> path)
 {
   nav_msgs::msg::Path path_msgs;
-  path_msgs.header.frame_id = map_frame_id_;
+  path_msgs.header.frame_id = map_frame_;
   path_msgs.header.stamp = now();
 
   for (auto & node : path) {
@@ -69,16 +94,20 @@ void NavyuGlobalPlanner::publish_path(std::vector<Node2D *> path)
 void NavyuGlobalPlanner::callback_goal_pose(const geometry_msgs::msg::PoseStamped & msg)
 {
   if (planner_ == nullptr) {
-    RCLCPP_ERROR_STREAM(get_logger(), "planner is not Initialized.");
+    RCLCPP_ERROR_STREAM(get_logger(), "Planner is not Initialized.");
     return;
   }
 
   geometry_msgs::msg::Pose start;
-  start.position.x = 0.0;
-  start.position.y = 0.0;
+  if (!get_robot_pose(start)) {
+    RCLCPP_ERROR_STREAM(get_logger(), "Can not get Robot Pose.");
+    return;
+  }
+
+  geometry_msgs::msg::Pose goal = msg.pose;
 
   std::vector<Node2D *> path;
-  if (plan(start, msg.pose, path)) {
+  if (plan(start, goal, path)) {
     publish_path(path);
   }
 }

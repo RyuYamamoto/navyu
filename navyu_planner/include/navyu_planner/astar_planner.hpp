@@ -7,7 +7,6 @@
 #include <Eigen/Core>
 
 #include <geometry_msgs/msg/pose.hpp>
-#include <nav_msgs/msg/detail/occupancy_grid__struct.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
 #include <queue>

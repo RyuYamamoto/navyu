@@ -7,9 +7,11 @@
 
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav_msgs/msg/detail/occupancy_grid__struct.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/path.hpp>
+
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 class NavyuGlobalPlanner : public rclcpp::Node
 {
@@ -28,14 +30,20 @@ public:
 
   void wait_for_costmap();
 
+  bool get_robot_pose(geometry_msgs::msg::Pose & robot_pose);
+
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscriber_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
 
+  tf2_ros::Buffer tf_buffer_{get_clock()};
+  std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
+
   std::shared_ptr<AstarPlanner> planner_;
 
-  std::string map_frame_id_;
+  std::string map_frame_;
+  std::string base_frame_;
 
   bool costmap_initialized_{false};
 };
