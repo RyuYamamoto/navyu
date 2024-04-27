@@ -1,0 +1,11 @@
+global_costmap_node:
+  ros__parameters:
+    update_frequency: 1.0
+    base_frame_id: "base_link"
+    map_frame_id: "map"
+    plugins: ["static_layer", "inflation_layer"]
+    inflation_layer:
+      inflation_radius: 0.55
+      robot_radius: 0.22
+    static_layer:
+      map_topic: "map"
