@@ -15,7 +15,7 @@
 #ifndef NAVYU_PLANNER__NAVYU_GLOBAL_PLANNER_HPP_
 #define NAVYU_PLANNER__NAVYU_GLOBAL_PLANNER_HPP_
 
-#include "navyu_planner/astar_planner.hpp"
+#include "navyu_path_planner/astar_planner.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 

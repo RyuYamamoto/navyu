@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#include "navyu_planner/navyu_global_planner.hpp"
-
-#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
+#include "navyu_path_planner/navyu_global_planner.hpp"
 
 NavyuGlobalPlanner::NavyuGlobalPlanner(const rclcpp::NodeOptions & node_options)
 : Node("navyu_global_planner", node_options)
@@ -147,6 +145,17 @@ void NavyuGlobalPlanner::callback_costmap(const nav_msgs::msg::OccupancyGrid & m
 
     return;
   }
+
+  if (planner_ == nullptr) {
+    RCLCPP_ERROR_STREAM(get_logger(), "Planner is not set.");
+    return;
+  }
+
+  // set costmap info
+  planner_->set_origin(msg.info.origin.position.x, msg.info.origin.position.y);
+  planner_->set_size(msg.info.width, msg.info.height);
+  planner_->set_resolution(msg.info.resolution);
+  planner_->set_costmap(msg.data);
 }
 
 #include "rclcpp_components/register_node_macro.hpp"

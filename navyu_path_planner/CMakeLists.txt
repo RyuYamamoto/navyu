@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(navyu_planner)
+project(navyu_path_planner)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -10,7 +10,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic )
 endif()
 
-find_package(backward_ros REQUIRED)
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
@@ -22,8 +21,6 @@ rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN "NavyuGlobalPlanner"
   EXECUTABLE navyu_global_planner_node
 )
-
-add_backward(navyu_global_planner_node)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -15,8 +15,8 @@
 #ifndef NAVYU_PLANNER__ASTAR_PLANNER_HPP_
 #define NAVYU_PLANNER__ASTAR_PLANNER_HPP_
 
-#include "navyu_planner/base_global_planner.hpp"
-#include "navyu_planner/node.hpp"
+#include "navyu_path_planner/base_global_planner.hpp"
+#include "navyu_path_planner/node.hpp"
 
 #include <Eigen/Core>
 
