@@ -24,10 +24,6 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
 
-    rviz_config_path = PathJoinSubstitution(
-        [FindPackageShare("navyu_costmap_2d"), "rviz", "costmap_test.rviz"]
-    )
-
     costmap_map_config_path = PathJoinSubstitution(
         [FindPackageShare("navyu_costmap_2d"), "config", "navyu_costmap_2d_params.yaml"]
     )
@@ -61,12 +57,6 @@ def generate_launch_description():
                     {"autostart": True},
                     {"node_names": ["map_server"]},
                 ],
-            ),
-            Node(
-                package="rviz2",
-                executable="rviz2",
-                output="screen",
-                arguments=["-d", rviz_config_path],
             ),
         ]
     )

@@ -60,24 +60,6 @@ def generate_launch_description():
         parameters=[simple_simulator_config_path, {"use_sim_time": use_sim_time}],
     )
 
-    map_path = PathJoinSubstitution([FindPackageShare("navyu_navigation"), "map", "map.yaml"])
-
-    map_server_node = Node(
-        package="nav2_map_server",
-        executable="map_server",
-        name="map_server",
-        parameters=[{"yaml_filename": map_path}, {"frame_id": "map"}],
-    )
-
-    lifesycle_manager_node = Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="map_server_lifecycle_manager",
-        output="screen",
-        emulate_tty=True,
-        parameters=[{"use_sim_time": True}, {"autostart": True}, {"node_names": ["map_server"]}],
-    )
-
     use_rviz_arg = DeclareLaunchArgument("use_rviz", default_value="true")
 
     rviz_config = os.path.join(
@@ -96,8 +78,6 @@ def generate_launch_description():
     ld.add_action(use_rviz_arg)
     ld.add_action(simple_simulator_node)
     ld.add_action(robot_state_publisher)
-    ld.add_action(map_server_node)
-    ld.add_action(lifesycle_manager_node)
     ld.add_action(rviz_node)
 
     return ld
