@@ -23,6 +23,7 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
+#include <algorithm>
 #include <queue>
 #include <unordered_map>
 #include <vector>
@@ -96,6 +97,8 @@ public:
       current = current->parent_;
     }
     path.emplace_back(start);
+
+    std::reverse(path.begin(), path.end());
 
     return path;
   }
