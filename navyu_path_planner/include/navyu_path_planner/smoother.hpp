@@ -84,7 +84,7 @@ public:
           pose.pose.position);
       }
 
-      if (5.0 < displacement) {
+      if (displacement_threshold_ < displacement) {
         segments_path.emplace_back(current_segments_path);
         current_segments_path.poses.clear();
         displacement = 0.0;
