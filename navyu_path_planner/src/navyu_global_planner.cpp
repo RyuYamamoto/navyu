@@ -45,15 +45,6 @@ NavyuGlobalPlanner::~NavyuGlobalPlanner()
 {
 }
 
-void NavyuGlobalPlanner::wait_for_costmap()
-{
-  rclcpp::WallRate rate(1);
-  while (!costmap_initialized_) {
-    RCLCPP_INFO_STREAM(get_logger(), "Wait For Costmap...");
-    rate.sleep();
-  }
-}
-
 bool NavyuGlobalPlanner::get_robot_pose(geometry_msgs::msg::Pose & robot_pose)
 {
   geometry_msgs::msg::TransformStamped robot_pose_frame;
@@ -139,9 +130,7 @@ void NavyuGlobalPlanner::callback_goal_pose(const geometry_msgs::msg::PoseStampe
 
 void NavyuGlobalPlanner::callback_costmap(const nav_msgs::msg::OccupancyGrid & msg)
 {
-  if (!costmap_initialized_) {
-    costmap_initialized_ = true;
-
+  if (planner_ == nullptr) {
     int size_x = msg.info.width;
     int size_y = msg.info.height;
     double resolution = msg.info.resolution;
@@ -156,11 +145,6 @@ void NavyuGlobalPlanner::callback_costmap(const nav_msgs::msg::OccupancyGrid & m
     get_parameter("lethal_cost_threshold", lethal_cost_threshold);
     planner_->set_lethal_cost_threshold(lethal_cost_threshold);
 
-    return;
-  }
-
-  if (planner_ == nullptr) {
-    RCLCPP_ERROR_STREAM(get_logger(), "Planner is not set.");
     return;
   }
 
