@@ -44,8 +44,6 @@ public:
 
   void publish_path(std::vector<Node2D *> path);
 
-  void wait_for_costmap();
-
   bool get_robot_pose(geometry_msgs::msg::Pose & robot_pose);
 
 private:
@@ -63,8 +61,6 @@ private:
 
   std::string map_frame_;
   std::string base_frame_;
-
-  bool costmap_initialized_{false};
 };
 
 #endif  // NAVYU_PLANNER__NAVYU_GLOBAL_PLANNER_HPP_
