@@ -15,7 +15,8 @@
 #ifndef NAVYU_PLANNER__NAVYU_GLOBAL_PLANNER_HPP_
 #define NAVYU_PLANNER__NAVYU_GLOBAL_PLANNER_HPP_
 
-#include "navyu_planner/astar_planner.hpp"
+#include "navyu_path_planner/astar_planner.hpp"
+#include "navyu_path_planner/smoother.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -26,6 +27,7 @@
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
 class NavyuGlobalPlanner : public rclcpp::Node
 {
@@ -50,11 +52,14 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscriber_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr raw_path_publisher_;
 
   tf2_ros::Buffer tf_buffer_{get_clock()};
   std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;
+  tf2_ros::TransformListener tf_listener_{tf_buffer_};
 
   std::shared_ptr<AstarPlanner> planner_;
+  std::shared_ptr<Smoother> smoother_;
 
   std::string map_frame_;
   std::string base_frame_;

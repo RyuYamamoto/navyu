@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#include "navyu_planner/navyu_global_planner.hpp"
+#include "navyu_path_planner/navyu_global_planner.hpp"
 
-#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
+#include "navyu_path_planner/smoother.hpp"
 
 NavyuGlobalPlanner::NavyuGlobalPlanner(const rclcpp::NodeOptions & node_options)
 : Node("navyu_global_planner", node_options)
@@ -22,6 +22,9 @@ NavyuGlobalPlanner::NavyuGlobalPlanner(const rclcpp::NodeOptions & node_options)
   map_frame_ = declare_parameter<std::string>("map_frame");
   base_frame_ = declare_parameter<std::string>("base_frame");
   declare_parameter<double>("lethal_cost_threshold");
+
+  const double displacement_threshold = declare_parameter<double>("displacement_threshold");
+  smoother_ = std::make_shared<Smoother>(displacement_threshold);
 
   broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
@@ -32,6 +35,8 @@ NavyuGlobalPlanner::NavyuGlobalPlanner(const rclcpp::NodeOptions & node_options)
     "costmap", rclcpp::QoS(10).transient_local().reliable().keep_last(1),
     std::bind(&NavyuGlobalPlanner::callback_costmap, this, std::placeholders::_1));
 
+  raw_path_publisher_ = create_publisher<nav_msgs::msg::Path>(
+    "raw_path", rclcpp::QoS(10).transient_local().reliable().keep_last(1));
   path_publisher_ = create_publisher<nav_msgs::msg::Path>(
     "path", rclcpp::QoS(10).transient_local().reliable().keep_last(1));
 }
@@ -101,8 +106,14 @@ void NavyuGlobalPlanner::publish_path(std::vector<Node2D *> path)
       node->x_, node->y_, path_pose.pose.position.x, path_pose.pose.position.y);
     path_msgs.poses.emplace_back(path_pose);
   }
+  // publish raw path
+  raw_path_publisher_->publish(path_msgs);
 
-  path_publisher_->publish(path_msgs);
+  // publish smoothing path
+  nav_msgs::msg::Path optimized_path = smoother_->smooth(path_msgs);
+  optimized_path.header.frame_id = map_frame_;
+  optimized_path.header.stamp = now();
+  path_publisher_->publish(optimized_path);
 }
 
 void NavyuGlobalPlanner::callback_goal_pose(const geometry_msgs::msg::PoseStamped & msg)
@@ -147,6 +158,17 @@ void NavyuGlobalPlanner::callback_costmap(const nav_msgs::msg::OccupancyGrid & m
 
     return;
   }
+
+  if (planner_ == nullptr) {
+    RCLCPP_ERROR_STREAM(get_logger(), "Planner is not set.");
+    return;
+  }
+
+  // set costmap info
+  planner_->set_origin(msg.info.origin.position.x, msg.info.origin.position.y);
+  planner_->set_size(msg.info.width, msg.info.height);
+  planner_->set_resolution(msg.info.resolution);
+  planner_->set_costmap(msg.data);
 }
 
 #include "rclcpp_components/register_node_macro.hpp"

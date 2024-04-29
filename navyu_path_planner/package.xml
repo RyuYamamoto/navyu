@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>navyu_planner</name>
+  <name>navyu_path_planner</name>
   <version>0.1.0</version>
-  <description>The navyu_planner package</description>
+  <description>The navyu_path_planner package</description>
   <maintainer email="ryu.yamamoto@tier4.jp">RyuYamamoto</maintainer>
   <license>Apache License 2.0</license>
 

@@ -15,14 +15,15 @@
 #ifndef NAVYU_PLANNER__ASTAR_PLANNER_HPP_
 #define NAVYU_PLANNER__ASTAR_PLANNER_HPP_
 
-#include "navyu_planner/base_global_planner.hpp"
-#include "navyu_planner/node.hpp"
+#include "navyu_path_planner/base_global_planner.hpp"
+#include "navyu_path_planner/node.hpp"
 
 #include <Eigen/Core>
 
 #include <geometry_msgs/msg/pose.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
+#include <algorithm>
 #include <queue>
 #include <unordered_map>
 #include <vector>
@@ -96,6 +97,8 @@ public:
       current = current->parent_;
     }
     path.emplace_back(start);
+
+    std::reverse(path.begin(), path.end());
 
     return path;
   }

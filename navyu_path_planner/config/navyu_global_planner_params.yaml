@@ -4,4 +4,6 @@ navyu_global_planner_node:
 
     base_frame: base_link
 
+    displacement_threshold: 5.0
+
     lethal_cost_threshold: 45.0
