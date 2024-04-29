@@ -33,3 +33,10 @@ ros2 launch navyu_navigation navigation2_bringup.launch.py
 ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py
 ```
 ![image](https://github.com/RyuYamamoto/navyu/assets/6177252/9d6984f6-edd8-4c10-a049-9d9f2b11834b)
+
+## Feature
+[ ] Path Tracking
+[ ] 2D/3D Localization
+[ ] Local Path Planning
+[ ] Collision Monitor
+[ ] Add Obstacle Layer to Costmap
