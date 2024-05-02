@@ -13,14 +13,28 @@ xhost +
 docker run -it --rm --net=host --env="DISPLAY=$DISPLAY" hazehk/navyu:latest
 ```
 
-### Launch 
-```bash
-ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py
-ros2 launch navyu_costmap_2d navyu_costmap_2d.launch.py
-ros2 launch navyu_path_planner navyu_global_planner.launch.py
+## How to Build
+```
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+git clone https://github.com/RyuYamamoto/navyu
+git clone https://github.com/CIT-Autonomous-Robot-Lab/emcl2_ros2 # if use emcl2 package
+cd ../
+rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
-![rviz_screenshot_2024_04_29-12_34_14](https://github.com/RyuYamamoto/navyu/assets/6177252/6aea86e5-2e57-44f4-98f6-69d3431346db)
+### Launch 
+```bash
+ros2 launch navyu_simulator navyu_simulator_bringup.launch.py
+ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
+```
+
+https://github.com/RyuYamamoto/navyu/assets/6177252/a620db9e-a79a-47b1-a69f-bd70c8a2c020
+
+```bash
+ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py use_rviz:=false
+ros2 launch navyu_navigation navyu_bringup.launch.py localization:=false
+```
 
 ### Navigation 2 Demo
 ```bash
