@@ -10,6 +10,7 @@
 
   <depend>navyu_navigation</depend>
   <depend>navyu_simulator</depend>
+  <depend>navyu_path_tracker</depend>
   <depend>navyu_path_planner</depend>
   <depend>navyu_costmap_2d</depend>
   <depend>rclcpp</depend>
