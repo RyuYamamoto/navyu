@@ -23,7 +23,7 @@ rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
 colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
-### Launch 
+### Launch
 ```bash
 ros2 launch navyu_simulator navyu_simulator_bringup.launch.py
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
