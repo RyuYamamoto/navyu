@@ -1,0 +1,11 @@
+navyu_path_tracker_node:
+  ros__parameters:
+    map_frame: map
+
+    base_frame: base_link
+
+    update_frequency: 100.0
+
+    limit_v_speed: 0.5
+
+    limit_w_speed: 1.0
