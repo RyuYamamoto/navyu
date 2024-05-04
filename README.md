@@ -38,20 +38,9 @@ ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py use_rviz:=f
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=false
 ```
 
-### Navigation 2 Demo
-```bash
-ros2 launch navyu_navigation navigation2_bringup.launch.py
-```
-[![](https://img.youtube.com/vi/V2hUBr7PJto/0.jpg)](https://www.youtube.com/watch?v=V2hUBr7PJto)
-
-### Simple Simulator Demo
-```
-ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py
-```
-![image](https://github.com/RyuYamamoto/navyu/assets/6177252/9d6984f6-edd8-4c10-a049-9d9f2b11834b)
-
 ## Feature
-- [ ] Path Tracking
+- [x] Path Tracking
+- [ ] Model Predictive Control Path Tracking
 - [ ] 2D/3D Localization
 - [ ] Local Path Planning
 - [ ] Collision Monitor
