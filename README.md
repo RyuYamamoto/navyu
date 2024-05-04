@@ -24,6 +24,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
 ### Launch
+Launch Gazebo Simulator
 ```bash
 ros2 launch navyu_simulator navyu_simulator_bringup.launch.py
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
@@ -31,26 +32,19 @@ ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
 
 https://github.com/RyuYamamoto/navyu/assets/6177252/a620db9e-a79a-47b1-a69f-bd70c8a2c020
 
+Launch Simple Simulator
 ```bash
 ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py use_rviz:=false
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=false
 ```
 
-### Navigation 2 Demo
-```bash
-ros2 launch navyu_navigation navigation2_bringup.launch.py
-```
-[![](https://img.youtube.com/vi/V2hUBr7PJto/0.jpg)](https://www.youtube.com/watch?v=V2hUBr7PJto)
-
-### Simple Simulator Demo
-```
-ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py
-```
-![image](https://github.com/RyuYamamoto/navyu/assets/6177252/9d6984f6-edd8-4c10-a049-9d9f2b11834b)
-
 ## Feature
-- [ ] Path Tracking
+- [x] Path Tracking
+- [ ] Velocity Planning
+- [ ] Velocity Smoothing
+- [ ] Model Predictive Control Path Tracking
 - [ ] 2D/3D Localization
 - [ ] Local Path Planning
 - [ ] Collision Monitor
 - [ ] Add Obstacle Layer to Costmap
+- [ ] 3D Costmap
