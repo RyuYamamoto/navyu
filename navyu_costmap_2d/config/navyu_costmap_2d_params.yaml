@@ -12,3 +12,5 @@ global_costmap_node:
     dynamic_layer:
       scan_topic: scan
       global_frame: map
+      min_laser_range: 0.0
+      max_laser_range: 5.0
