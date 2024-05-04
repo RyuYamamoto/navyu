@@ -22,9 +22,9 @@
 class StaticLayer : public Layer
 {
 public:
-  explicit StaticLayer(rclcpp::Node * node) : Layer(node) { node_ = node; }
+  explicit StaticLayer(rclcpp::Node * node) : Layer(node) {}
 
-  void initialize() override
+  void configure() override
   {
     rclcpp::QoS qos(10);
     qos.transient_local();
@@ -36,19 +36,14 @@ public:
       map_topic, qos, std::bind(&StaticLayer::callback_map, this, std::placeholders::_1));
   }
 
-  void callback_map(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) { costmap_ = msg; }
+  void callback_map(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) { map_ = *msg; }
 
-  void update(nav_msgs::msg::OccupancyGrid::SharedPtr & master_costmap) override
-  {
-    master_costmap = costmap_;
-  }
+  void update(nav_msgs::msg::OccupancyGrid & master_costmap) override { master_costmap = map_; }
 
 private:
-  rclcpp::Node * node_;
-
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber_;
 
-  nav_msgs::msg::OccupancyGrid::SharedPtr costmap_;
+  nav_msgs::msg::OccupancyGrid map_;
 };
 
 #endif  // NAVYU_COSTMAP_2D__PLUGINS__STATIC_LAYER_HPP_

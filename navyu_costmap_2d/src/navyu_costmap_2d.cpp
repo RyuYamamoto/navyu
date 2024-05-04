@@ -14,8 +14,12 @@
 
 #include "navyu_costmap_2d/navyu_costmap_2d.hpp"
 
+#include "navyu_costmap_2d/plugins/dynamic_layer.hpp"
 #include "navyu_costmap_2d/plugins/inflation_layer.hpp"
 #include "navyu_costmap_2d/plugins/static_layer.hpp"
+
+#include <tf2/time.h>
+#include <tf2_ros/transform_listener.h>
 
 NavyuCostmap2D::NavyuCostmap2D(const rclcpp::NodeOptions & node_options)
 : Node("navyu_costmap_2d", node_options)
@@ -28,9 +32,16 @@ NavyuCostmap2D::NavyuCostmap2D(const rclcpp::NodeOptions & node_options)
 
   // create all costmap plugins instance
   layer_function_["static_layer"] = std::make_shared<StaticLayer>(this);
+  layer_function_["dynamic_layer"] = std::make_shared<DynamicLayer>(this);
   layer_function_["inflation_layer"] = std::make_shared<InflationLayer>(this);
 
-  for (auto plugin : plugins_) layer_function_[plugin]->initialize();
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+  for (auto plugin : plugins_) {
+    layer_function_[plugin]->initialize(tf_buffer_.get(), listener_.get());
+    layer_function_[plugin]->configure();
+  }
 
   rclcpp::QoS qos(10);
   qos.transient_local();
@@ -50,45 +61,22 @@ NavyuCostmap2D::~NavyuCostmap2D()
 
 void NavyuCostmap2D::update()
 {
-  nav_msgs::msg::OccupancyGrid::SharedPtr master_costmap;
+  nav_msgs::msg::OccupancyGrid master_costmap;
 
   // update costmap
   for (auto & plugin : plugins_) {
     layer_function_[plugin]->update(master_costmap);
   }
 
-  if (master_costmap == nullptr) {
-    RCLCPP_ERROR_STREAM(get_logger(), "master costmap is null");
+  if (master_costmap.data.empty()) {
+    RCLCPP_ERROR_STREAM(get_logger(), "master costmap is empty");
     return;
   }
 
-  master_costmap->header.stamp = now();
-  master_costmap->header.frame_id = map_frame_id_;
+  master_costmap.header.stamp = now();
+  master_costmap.header.frame_id = map_frame_id_;
 
-  costmap_publisher_->publish(*master_costmap);
-}
-
-geometry_msgs::msg::TransformStamped NavyuCostmap2D::get_transform(
-  const std::string target_frame, const std::string source_frame)
-{
-  geometry_msgs::msg::TransformStamped frame_transform;
-  try {
-    frame_transform = tf_buffer_.lookupTransform(
-      target_frame, source_frame, tf2::TimePointZero, tf2::durationFromSec(0.5));
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR(get_logger(), "%s", ex.what());
-    frame_transform.header.stamp = rclcpp::Clock().now();
-    frame_transform.header.frame_id = target_frame;
-    frame_transform.child_frame_id = source_frame;
-    frame_transform.transform.translation.x = 0.0;
-    frame_transform.transform.translation.y = 0.0;
-    frame_transform.transform.translation.z = 0.0;
-    frame_transform.transform.rotation.w = 1.0;
-    frame_transform.transform.rotation.x = 0.0;
-    frame_transform.transform.rotation.y = 0.0;
-    frame_transform.transform.rotation.z = 0.0;
-  }
-  return frame_transform;
+  costmap_publisher_->publish(master_costmap);
 }
 
 #include "rclcpp_components/register_node_macro.hpp"

@@ -19,6 +19,9 @@
 
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
 static constexpr int8_t LETHAL_COST = 100;
 static constexpr int8_t INSCRIBED_COST = 99;
 
@@ -27,11 +30,18 @@ class Layer
 public:
   explicit Layer(rclcpp::Node * node) { node_ = node; }
   virtual ~Layer() {}
-  virtual void initialize() = 0;
-  virtual void update(nav_msgs::msg::OccupancyGrid::SharedPtr & master_costmap) = 0;
+  void initialize(tf2_ros::Buffer * tf_buffer, tf2_ros::TransformListener * listener)
+  {
+    tf_buffer_ = tf_buffer;
+    listener_ = listener;
+  };
+  virtual void configure() = 0;
+  virtual void update(nav_msgs::msg::OccupancyGrid & master_costmap) = 0;
 
-private:
+protected:
   rclcpp::Node * node_;
+  tf2_ros::Buffer * tf_buffer_;
+  tf2_ros::TransformListener * listener_;
 };
 
 #endif  // NAVYU_COSTMAP_2D__PLUGINS__LAYER_HPP_

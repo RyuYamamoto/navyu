@@ -10,6 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic )
 endif()
 
+find_package(backward_ros REQUIRED)
 find_package(ament_cmake_auto REQUIRED)
 ament_auto_find_build_dependencies()
 
@@ -21,6 +22,8 @@ rclcpp_components_register_node(${PROJECT_NAME}
   PLUGIN "NavyuCostmap2D"
   EXECUTABLE ${PROJECT_NAME}_node
 )
+
+add_backward(${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
