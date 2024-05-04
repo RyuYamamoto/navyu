@@ -24,6 +24,7 @@ colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
 ### Launch
+Launch Gazebo Simulator
 ```bash
 ros2 launch navyu_simulator navyu_simulator_bringup.launch.py
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
@@ -31,6 +32,7 @@ ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
 
 https://github.com/RyuYamamoto/navyu/assets/6177252/a620db9e-a79a-47b1-a69f-bd70c8a2c020
 
+Launch Simple Simulator
 ```bash
 ros2 launch navyu_simulator navyu_simple_simulator_bringup.launch.py use_rviz:=false
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=false
