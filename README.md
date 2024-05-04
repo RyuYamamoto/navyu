@@ -40,8 +40,11 @@ ros2 launch navyu_navigation navyu_bringup.launch.py localization:=false
 
 ## Feature
 - [x] Path Tracking
+- [ ] Velocity Planning
+- [ ] Velocity Smoothing
 - [ ] Model Predictive Control Path Tracking
 - [ ] 2D/3D Localization
 - [ ] Local Path Planning
 - [ ] Collision Monitor
 - [ ] Add Obstacle Layer to Costmap
+- [ ] 3D Costmap
