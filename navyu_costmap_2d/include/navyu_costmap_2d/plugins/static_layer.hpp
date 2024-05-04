@@ -17,8 +17,6 @@
 
 #include "navyu_costmap_2d/plugins/layer.hpp"
 
-#include <nav_msgs/msg/detail/occupancy_grid__struct.hpp>
-
 class StaticLayer : public Layer
 {
 public:

@@ -18,25 +18,19 @@
 #include "navyu_costmap_2d/plugins/layer.hpp"
 
 #include <laser_geometry/laser_geometry.hpp>
-#include <pcl/impl/point_types.hpp>
 #include <pcl_ros/transforms.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 
-#include <geometry_msgs/msg/detail/pose_with_covariance_stamped__struct.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
-#include <sensor_msgs/msg/detail/point_cloud2__struct.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 #include <pcl/common/transforms.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
-#include <tf2/transform_datatypes.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
 
 class DynamicLayer : public Layer
 {
@@ -45,6 +39,9 @@ public:
 
   void configure() override
   {
+    min_laser_range_ = node_->declare_parameter<double>("dynamic_layer.min_laser_range");
+    max_laser_range_ = node_->declare_parameter<double>("dynamic_layer.max_laser_range");
+
     global_frame_ = node_->declare_parameter<std::string>("dynamic_layer.global_frame");
     const std::string scan_topic =
       node_->declare_parameter<std::string>("dynamic_layer.scan_topic");
@@ -70,9 +67,17 @@ public:
       return;
     }
 
+    // scan range filter
+    for (std::size_t i = 0; i < scan_->ranges.size(); i++) {
+      if (scan_->ranges[i] < min_laser_range_ or max_laser_range_ < scan_->ranges[i])
+        scan_->ranges[i] = std::numeric_limits<float>::quiet_NaN();
+    }
+
+    // convert laser scan to point cloud msg
     sensor_msgs::msg::PointCloud2 cloud_msg, transform_cloud_msg;
     projection_.projectLaser(*scan_, cloud_msg);
 
+    // get robot pose
     geometry_msgs::msg::TransformStamped map_to_sensor_frame;
     if (!get_transform(global_frame_, scan_->header.frame_id, map_to_sensor_frame)) {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Can not get frame.");
@@ -83,17 +88,19 @@ public:
     pcl::PointCloud<pcl::PointXYZ>::Ptr transform_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::fromROSMsg(cloud_msg, *laser_cloud);
 
+    // transform laser cloud
     const Eigen::Affine3d affine = tf2::transformToEigen(map_to_sensor_frame);
     const Eigen::Matrix4f matrix = affine.matrix().cast<float>();
-
     pcl::transformPointCloud(*laser_cloud, *transform_cloud, matrix);
 
+    // get costmap info
     const double resolution = master_costmap.info.resolution;
     const int width = master_costmap.info.width;
     const int height = master_costmap.info.height;
     const double origin_x = master_costmap.info.origin.position.x;
     const double origin_y = master_costmap.info.origin.position.y;
 
+    // calculation grid index
     for (auto cloud : transform_cloud->points) {
       const int ix = static_cast<int>((cloud.x - origin_x) / resolution);
       const int iy = static_cast<int>((cloud.y - origin_y) / resolution);
@@ -126,6 +133,9 @@ private:
   laser_geometry::LaserProjection projection_;
 
   std::string global_frame_;
+
+  double min_laser_range_;
+  double max_laser_range_;
 };
 
 #endif
