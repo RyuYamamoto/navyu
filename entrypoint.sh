@@ -6,6 +6,5 @@ tmux send-keys 'source install/setup.bash && ros2 launch navyu_simulator navyu_s
 
 tmux split-window -h;
 
-tmux send-keys 'source install/setup.bash' ENTER;
-tmux send-keys ' ros2 launch navyu_navigation navigation2_bringup.launch.py'
+tmux send-keys 'source install/setup.bash && ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true' ENTER;
 tmux attach-session

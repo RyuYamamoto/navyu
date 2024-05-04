@@ -26,6 +26,7 @@ RUN mkdir -p ${HOME}/.gazebo/models && \
     tar xvzf /tmp/ground_plane -C ${HOME}/.gazebo/models
 
 RUN git clone https://github.com/RyuYamamoto/navyu.git
+RUN git clone https://github.com/CIT-Autonomous-Robot-Lab/emcl2_ros2.git
 WORKDIR ../
 RUN apt update && apt install -y python3-rosdep2 python3-colcon-common-extensions
 RUN rosdep update
@@ -40,7 +41,7 @@ RUN apt install -y \
     ros-humble-nav2-bringup
 RUN source /opt/ros/humble/setup.bash && \
     rosdep install -iry --from-paths src --rosdistro humble && \
-    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to navyu
+    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release --packages-up-to navyu emcl2
 
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,compute,utility
 ENV GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:/ros2_ws/src/navyu/navyu_simulator/world
