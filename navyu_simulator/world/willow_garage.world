@@ -10,5 +10,13 @@
     <include>
       <uri>model://willowgarage</uri>
     </include>
+
+    <gui fullscreen='0'>
+      <camera name='gzclient_camera'>
+        <pose frame=''>-12.012729 -19.461071 6.661635 0.0 0.971643 0.860196</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
   </world>
 </sdf>
