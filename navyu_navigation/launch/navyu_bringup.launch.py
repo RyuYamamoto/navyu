@@ -25,7 +25,6 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    use_rviz = LaunchConfiguration("use_rviz", default="true")
     use_sim_time = LaunchConfiguration("use_sim_time", default="true")
 
     map_path = PathJoinSubstitution([FindPackageShare("navyu_navigation"), "map", "map.yaml"])
@@ -41,6 +40,10 @@ def generate_launch_description():
 
     navyu_path_tracker_config = PathJoinSubstitution(
         [FindPackageShare("navyu_path_tracker"), "config", "navyu_path_tracker_params.yaml"]
+    )
+
+    navyu_safety_limiter_config = PathJoinSubstitution(
+        [FindPackageShare("navyu_safety_limiter"), "config", "navyu_safety_limiter_params.yaml"]
     )
 
     lifecycle_node_list = ["map_server"]
@@ -73,7 +76,15 @@ def generate_launch_description():
                 package="navyu_path_tracker",
                 executable="navyu_path_tracker_node",
                 name="navyu_path_tracker_node",
+                remappings=[("/cmd_vel", "/cmd_vel_in")],
                 parameters=[navyu_path_tracker_config, {"use_sim_time": use_sim_time}],
+            ),
+            Node(
+                package="navyu_safety_limiter",
+                executable="navyu_safety_limiter_node",
+                name="safety_limiter_node",
+                remappings=[("/cmd_vel_out", "/cmd_vel")],
+                parameters=[navyu_safety_limiter_config, {"use_sim_time": use_sim_time}],
             ),
             Node(
                 package="nav2_lifecycle_manager",
