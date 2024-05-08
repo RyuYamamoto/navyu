@@ -14,6 +14,10 @@
 
 #include "navyu_path_tracker/navyu_path_tracker.hpp"
 
+#include <rclcpp/logging.hpp>
+
+#include <iterator>
+
 NavyuPathTracker::NavyuPathTracker(const rclcpp::NodeOptions & node_options)
 : Node("navyu_path_tracker", node_options)
 {
@@ -24,12 +28,15 @@ NavyuPathTracker::NavyuPathTracker(const rclcpp::NodeOptions & node_options)
   limit_v_speed_ = declare_parameter<double>("limit_v_speed");
   limit_w_speed_ = declare_parameter<double>("limit_w_speed");
 
+  yaw_tolerance_ = declare_parameter<double>("yaw_tolerance");
+
+  look_ahead_const_ = declare_parameter<double>("look_ahead_const");
+  gain_ = declare_parameter<double>("gain");
+
   path_subscriber_ = create_subscription<nav_msgs::msg::Path>(
     "path", 1, std::bind(&NavyuPathTracker::callback_path, this, std::placeholders::_1));
 
   cmd_vel_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-  nearest_point_marker_publisher_ =
-    create_publisher<visualization_msgs::msg::Marker>("nearest_point_marker", 10);
   target_point_marker_publisher_ =
     create_publisher<visualization_msgs::msg::Marker>("target_point_marker", 10);
 
@@ -37,6 +44,7 @@ NavyuPathTracker::NavyuPathTracker(const rclcpp::NodeOptions & node_options)
     std::chrono::milliseconds(static_cast<int>(1.0 / update_frequency_ * 1000)),
     std::bind(&NavyuPathTracker::process, this));
 }
+
 NavyuPathTracker::~NavyuPathTracker()
 {
 }
@@ -84,43 +92,52 @@ void NavyuPathTracker::process()
     return;
   }
 
-  int nearest_point_index = 0;
+  // nearest path point from robot pose
   std::vector<double> distance_list;
-  for (std::size_t idx = nearest_point_index; idx < path_.poses.size(); idx++) {
+  for (std::size_t idx = 0; idx < path_.poses.size(); idx++) {
     distance_list.emplace_back(calculation_distance(robot_pose, path_.poses[idx].pose));
   }
-  std::vector<double>::iterator itr = std::min_element(distance_list.begin(), distance_list.end());
-  nearest_point_index = std::distance(distance_list.begin(), itr);
+  auto itr = std::min_element(distance_list.begin(), distance_list.end());
 
-  if (path_.poses.size() - 1 <= nearest_point_index) {
+  if (std::next(itr) == distance_list.end()) {
     v_ = w_ = 0.0;
     publish_velocity_command(v_, w_);
+    path_.poses.clear();
+    adjust_yaw_angle_ = false;
+    return;
+  }
+
+  // update look ahead distance
+  const double look_ahead_distance = gain_ * v_ + look_ahead_const_;
+  // const double look_ahead_distance = 0.1 * v_ + 0.3;
+
+  int target_point_index = std::distance(distance_list.begin(), itr);
+  while (distance_list[target_point_index] < look_ahead_distance) {
+    if (path_.poses.size() <= target_point_index + 1) break;
+    target_point_index++;
+  }
+
+  auto target_point = path_.poses[target_point_index].pose.position;
+
+  // update steer
+  geometry_msgs::msg::Vector3 euler = convert_quaternion_to_euler(robot_pose.orientation);
+  const double dx = target_point.x - robot_pose.position.x;
+  const double dy = target_point.y - robot_pose.position.y;
+  double alpha = normalized(std::atan2(dy, dx) - euler.z);
+
+  if (!adjust_yaw_angle_) {
+    if (std::fabs(alpha) < yaw_tolerance_) adjust_yaw_angle_ = true;
+    int sign = (alpha > 0) ? 1 : -1;
+    publish_velocity_command(0.0, sign * limit_w_speed_ * 0.5);
     return;
   }
 
   // limit linear velocity
   double a = 1.0 * (limit_v_speed_ - v_);
 
-  // update look ahead distance
-  const double look_ahead_filter = 0.1 * v_ + 0.3;
-
-  int target_point_index = nearest_point_index;
-  while (calculation_distance(robot_pose, path_.poses[target_point_index].pose) <
-         look_ahead_filter) {
-    if (path_.poses.size() <= target_point_index + 1) break;
-    target_point_index++;
-  }
-  if (path_.poses.size() < target_point_index) target_point_index = path_.poses.size();
-
-  // update steer
-  geometry_msgs::msg::Vector3 euler = convert_quaternion_to_euler(robot_pose.orientation);
-  const double dx = path_.poses[target_point_index].pose.position.x - robot_pose.position.x;
-  const double dy = path_.poses[target_point_index].pose.position.y - robot_pose.position.y;
-  const double alpha = std::atan2(dy, dx) - euler.z;
-  w_ = 2 * v_ * std::sin(alpha) / look_ahead_filter;
-
   // update current linear velocity
   v_ += (a * (1.0 / update_frequency_));
+  w_ = v_ * std::sin(alpha) / look_ahead_distance;
 
   // publish velocity command
   v_ = std::clamp(v_, -limit_v_speed_, limit_v_speed_);
@@ -128,9 +145,6 @@ void NavyuPathTracker::process()
   publish_velocity_command(v_, w_);
 
   // publish debug marker
-  nearest_point_marker_publisher_->publish(create_marker(
-    path_.poses[nearest_point_index].pose, create_scale(0.1, 0.1, 0.1),
-    create_color(1.0, 0.0, 1.0, 0.0)));
   target_point_marker_publisher_->publish(create_marker(
     path_.poses[target_point_index].pose, create_scale(0.1, 0.1, 0.1),
     create_color(1.0, 1.0, 1.0, 0.0)));

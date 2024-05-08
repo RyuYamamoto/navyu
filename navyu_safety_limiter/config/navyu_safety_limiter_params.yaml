@@ -8,4 +8,4 @@ safety_limiter_node:
     length: 0.5
     scale: 1.5
     slowdown_polygon: [-0.4, 0.5, -0.4, -0.5, 0.7, -0.5, 0.7, 0.5]
-    stop_polygon: [-0.3, 0.4, -0.3, -0.4, 0.5, -0.4, 0.5, 0.4]
+    stop_polygon: [-0.3, 0.3, -0.3, -0.3, 0.5, -0.3, 0.5, 0.3]
