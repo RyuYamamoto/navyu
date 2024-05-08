@@ -107,7 +107,6 @@ private:
   laser_geometry::LaserProjection projection_;
 
   geometry_msgs::msg::Twist cmd_vel_in_;
-  geometry_msgs::msg::Twist current_control_twist_;
 
   std::vector<Polygon> polygons_;
 
@@ -115,7 +114,7 @@ private:
   double slowdown_ratio_;
   int collision_points_threshold_in_polygon_;
 
-  std::string current_state_{"NONE"};
+  std::string current_state_{""};
 };
 
 #endif

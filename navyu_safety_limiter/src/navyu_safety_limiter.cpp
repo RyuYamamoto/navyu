@@ -116,14 +116,14 @@ void NavyuSafetyLimiter::callback_cmd_vel(const geometry_msgs::msg::Twist msg)
   // check collision
   geometry_msgs::msg::Twist cmd_vel_out = msg;
 
-  if (current_state_ == "SLOWDOWN") {
+  if (current_state_ == "Slowdown") {
     cmd_vel_out.linear.x = slowdown_ratio_ * msg.linear.x;
     cmd_vel_out.linear.y = slowdown_ratio_ * msg.linear.y;
     cmd_vel_out.angular.z = slowdown_ratio_ * msg.angular.z;
     text.color.r = 1.0;
     text.color.g = 1.0;
     text.color.b = 0.0;
-  } else if (current_state_ == "STOP") {
+  } else if (current_state_ == "Stop") {
     cmd_vel_out.linear.x = 0.0;
     cmd_vel_out.linear.y = 0.0;
     cmd_vel_out.angular.z = 0.0;
@@ -150,7 +150,6 @@ void NavyuSafetyLimiter::callback_cmd_vel(const geometry_msgs::msg::Twist msg)
 
   // publish filter cmd_vel
   cmd_vel_out_publisher_->publish(cmd_vel_out);
-  current_control_twist_ = cmd_vel_out;
 }
 
 bool NavyuSafetyLimiter::get_transform(
@@ -188,15 +187,12 @@ void NavyuSafetyLimiter::callback_laser_scan(const sensor_msgs::msg::LaserScan::
   const Eigen::Matrix4f matrix = affine.matrix().cast<float>();
   pcl::transformPointCloud(*laser_cloud, *transform_cloud, matrix);
 
-  current_state_ = "NONE";
+  current_state_ = "None";
 
   // check collision
   for (auto polygon : polygons_) {
     geometry_msgs::msg::Polygon dynamic_polygon;
-    if (polygon.type_ == STOP)
-      dynamic_polygon = polygon.polygon_;
-    else
-      dynamic_polygon = polygon.update_polygon(cmd_vel_in_);
+    dynamic_polygon = polygon.update_polygon(cmd_vel_in_);
 
     geometry_msgs::msg::PolygonStamped polygon_msg;
     polygon_msg.header.stamp = now();
@@ -207,9 +203,9 @@ void NavyuSafetyLimiter::callback_laser_scan(const sensor_msgs::msg::LaserScan::
     if (!check_collision_points_in_polygon(dynamic_polygon, transform_cloud)) continue;
 
     if (polygon.type_ == SLOWDOWN) {
-      current_state_ = "SLOWDOWN";
+      current_state_ = "Slowdown";
     } else if (polygon.type_ == STOP) {
-      current_state_ = "STOP";
+      current_state_ = "Stop";
     }
   }
 }

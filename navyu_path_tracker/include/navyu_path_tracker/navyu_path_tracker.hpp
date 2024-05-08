@@ -78,11 +78,19 @@ public:
 
     return euler;
   }
+  inline double normalized(const double radian)
+  {
+    double normalized_radian = radian;
+    if (M_PI < radian)
+      normalized_radian -= 2.0 * M_PI;
+    else if (radian < -M_PI)
+      normalized_radian += 2.0 * M_PI;
+    return normalized_radian;
+  }
 
 private:
   rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_subscriber_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
-  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr nearest_point_marker_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr target_point_marker_publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
 
@@ -96,9 +104,16 @@ private:
 
   double update_frequency_;
 
+  bool adjust_yaw_angle_{false};
+
   // translational and rotational speed
   double limit_v_speed_;
   double limit_w_speed_;
+
+  double yaw_tolerance_;
+
+  double look_ahead_const_;
+  double gain_;
 
   double v_;
   double w_;
