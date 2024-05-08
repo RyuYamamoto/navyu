@@ -45,6 +45,6 @@ ros2 launch navyu_navigation navyu_bringup.launch.py localization:=false
 - [ ] Model Predictive Control Path Tracking
 - [ ] 2D/3D Localization
 - [ ] Local Path Planning
-- [ ] Collision Monitor
-- [ ] Add Obstacle Layer to Costmap
+- [x] Collision Monitor
+- [x] Add Obstacle Layer to Costmap
 - [ ] 3D Costmap
