@@ -30,7 +30,7 @@ ros2 launch navyu_simulator navyu_simulator_bringup.launch.py
 ros2 launch navyu_navigation navyu_bringup.launch.py localization:=true
 ```
 
-https://github.com/RyuYamamoto/navyu/assets/6177252/28d3abd4-0e86-4c46-8657-a03a5dd8e8ec
+https://github.com/RyuYamamoto/navyu/assets/6177252/22a092f1-14fc-4514-85c5-f63540dd98c3
 
 Launch Simple Simulator
 ```bash
