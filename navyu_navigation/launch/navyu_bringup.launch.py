@@ -51,7 +51,7 @@ def generate_launch_description():
             Node(
                 package="navyu_costmap_2d",
                 executable="navyu_costmap_2d_node",
-                name="global_costmap_node",
+                name="navyu_global_costmap_node",
                 parameters=[navyu_config_path, {"use_sim_time": use_sim_time}],
             ),
             Node(
@@ -70,7 +70,7 @@ def generate_launch_description():
             Node(
                 package="navyu_safety_limiter",
                 executable="navyu_safety_limiter_node",
-                name="safety_limiter_node",
+                name="navyu_safety_limiter_node",
                 remappings=[("/cmd_vel_out", "/cmd_vel")],
                 parameters=[navyu_config_path, {"use_sim_time": use_sim_time}],
             ),

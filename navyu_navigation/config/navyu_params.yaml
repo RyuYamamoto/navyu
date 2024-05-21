@@ -1,4 +1,4 @@
-global_costmap_node:
+navyu_global_costmap_node:
   ros__parameters:
     update_frequency: 1.0
     base_frame_id: base_link
@@ -33,7 +33,7 @@ navyu_path_tracker_node:
     gain: 0.1 # to update look_ahead_distance from velocity
     look_ahead_const: 0.3
 
-safety_limiter_node:
+navyu_safety_limiter_node:
   ros__parameters:
     base_frame: base_link
     slowdown_ratio: 0.45
