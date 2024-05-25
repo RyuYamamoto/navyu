@@ -1,0 +1,5 @@
+navyu_navigation_server_node:
+  ros__parameters:
+    update_frequency: 1.0
+    map_frame: map
+    base_frame: base_link

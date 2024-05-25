@@ -12,7 +12,7 @@ navyu_global_costmap_node:
     dynamic_layer:
       scan_topic: scan
       global_frame: map
-      min_laser_range: 0.0
+      min_laser_range: 0.1
       max_laser_range: 5.0
 
 navyu_global_planner_node:
@@ -20,14 +20,14 @@ navyu_global_planner_node:
     map_frame: map
     base_frame: base_link
     displacement_threshold: 5.0
-    lethal_cost_threshold: 30.0
+    lethal_cost_threshold: 25.0
 
 navyu_path_tracker_node:
   ros__parameters:
     map_frame: map
     base_frame: base_link
     update_frequency: 100.0
-    limit_v_speed: 0.5
+    limit_v_speed: 0.3
     limit_w_speed: 1.0
     yaw_tolerance: 0.07
     gain: 0.1 # to update look_ahead_distance from velocity
@@ -37,7 +37,7 @@ navyu_safety_limiter_node:
   ros__parameters:
     base_frame: base_link
     slowdown_ratio: 0.45
-    collision_points_threshold_in_polygon: 6
+    collision_points_threshold_in_polygon: 5
     scan_timeout: 1.0
     robot_radius: 0.5
     length: 0.5

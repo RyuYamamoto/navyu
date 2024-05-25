@@ -68,7 +68,9 @@ public:
         node->set_grid_index(get_grid_index(node->x_, node->y_));
 
         // check obstacle
-        if (lethal_cost_threshold_ < costmap_[node->grid_index_]) {
+        if (
+          lethal_cost_threshold_ < costmap_[node->grid_index_] and
+          costmap_[current_node->grid_index_] < costmap_[node->grid_index_]) {
           continue;
         }
 

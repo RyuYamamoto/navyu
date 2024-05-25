@@ -20,10 +20,12 @@
 
 #include <rclcpp/rclcpp.hpp>
 
+#include "navyu_msgs/srv/goal.hpp"
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <navyu_msgs/srv/detail/goal__struct.hpp>
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -46,11 +48,17 @@ public:
 
   bool get_robot_pose(geometry_msgs::msg::Pose & robot_pose);
 
+  void recieve_goal_service(
+    const navyu_msgs::srv::Goal::Request::SharedPtr request,
+    const navyu_msgs::srv::Goal::Response::SharedPtr response);
+
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscriber_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscriber_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_publisher_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr raw_path_publisher_;
+
+  rclcpp::Service<navyu_msgs::srv::Goal>::SharedPtr goal_service_;
 
   tf2_ros::Buffer tf_buffer_{get_clock()};
   std::shared_ptr<tf2_ros::TransformBroadcaster> broadcaster_;

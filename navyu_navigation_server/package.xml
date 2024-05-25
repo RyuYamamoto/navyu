@@ -1,22 +1,22 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>navyu_path_planner</name>
+  <name>navyu_navigation_server</name>
   <version>0.1.0</version>
-  <description>The navyu_path_planner package</description>
+  <description>The navyu_navigation_server package</description>
   <maintainer email="ryu.yamamoto@tier4.jp">RyuYamamoto</maintainer>
   <license>Apache License 2.0</license>
 
   <buildtool_depend>ament_cmake_auto</buildtool_depend>
 
-  <depend>geometry_msgs</depend>
-  <depend>nav2_costmap_2d</depend>
-  <depend>nav_msgs</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
+  <depend>nav_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>visualization_msgs</depend>
   <depend>tf2</depend>
-  <depend>tf2_eigen</depend>
-  <depend>tf2_geometry_msgs</depend>
   <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>tf2_eigen</depend>
   <depend>navyu_msgs</depend>
 
   <exec_depend>launch_ros</exec_depend>

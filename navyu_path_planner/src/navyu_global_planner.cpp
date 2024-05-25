@@ -28,17 +28,25 @@ NavyuGlobalPlanner::NavyuGlobalPlanner(const rclcpp::NodeOptions & node_options)
 
   broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
 
-  goal_pose_subscriber_ = create_subscription<geometry_msgs::msg::PoseStamped>(
-    "goal_pose", 5,
-    std::bind(&NavyuGlobalPlanner::callback_goal_pose, this, std::placeholders::_1));
+  // subscriber
+  // goal_pose_subscriber_ = create_subscription<geometry_msgs::msg::PoseStamped>(
+  //  "goal_pose", 5,
+  //  std::bind(&NavyuGlobalPlanner::callback_goal_pose, this, std::placeholders::_1));
   costmap_subscriber_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
     "costmap", rclcpp::QoS(10).transient_local().reliable().keep_last(1),
     std::bind(&NavyuGlobalPlanner::callback_costmap, this, std::placeholders::_1));
 
+  // publisher
   raw_path_publisher_ = create_publisher<nav_msgs::msg::Path>(
     "raw_path", rclcpp::QoS(10).transient_local().reliable().keep_last(1));
   path_publisher_ = create_publisher<nav_msgs::msg::Path>(
     "path", rclcpp::QoS(10).transient_local().reliable().keep_last(1));
+
+  // service
+  goal_service_ = create_service<navyu_msgs::srv::Goal>(
+    "goal", std::bind(
+              &NavyuGlobalPlanner::recieve_goal_service, this, std::placeholders::_1,
+              std::placeholders::_2));
 }
 
 NavyuGlobalPlanner::~NavyuGlobalPlanner()
@@ -105,6 +113,23 @@ void NavyuGlobalPlanner::publish_path(std::vector<Node2D *> path)
   optimized_path.header.frame_id = map_frame_;
   optimized_path.header.stamp = now();
   path_publisher_->publish(optimized_path);
+}
+
+void NavyuGlobalPlanner::recieve_goal_service(
+  const navyu_msgs::srv::Goal::Request::SharedPtr request,
+  const navyu_msgs::srv::Goal::Response::SharedPtr response)
+{
+  if (planner_ == nullptr) {
+    RCLCPP_ERROR_STREAM(get_logger(), "Planner is not Initialized.");
+    response->ret = false;
+    return;
+  }
+
+  std::vector<Node2D *> path;
+  if (plan(request->start.pose, request->goal.pose, path)) {
+    publish_path(path);
+    response->ret = true;
+  }
 }
 
 void NavyuGlobalPlanner::callback_goal_pose(const geometry_msgs::msg::PoseStamped & msg)
