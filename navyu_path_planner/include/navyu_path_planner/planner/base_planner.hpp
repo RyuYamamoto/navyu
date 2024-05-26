@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#ifndef NAVYU_PLANNER__BASE_GLOBAL_PLANNER_HPP_
-#define NAVYU_PLANNER__BASE_GLOBAL_PLANNER_HPP_
+#ifndef NAVYU_PLANNER__BASE_PLANNER_HPP_
+#define NAVYU_PLANNER__BASE_PLANNER_HPP_
 
 #include <cmath>
 #include <iostream>
 #include <vector>
 
-class BaseGlobalPlanner
+class BasePlanner
 {
 public:
-  BaseGlobalPlanner(int size_x, int size_y, double resolution, double origin_x, double origin_y)
+  BasePlanner(int size_x, int size_y, double resolution, double origin_x, double origin_y)
   : size_x_(size_x),
     size_y_(size_y),
     resolution_(resolution),
@@ -79,4 +79,4 @@ protected:
   double lethal_cost_threshold_;
 };
 
-#endif  // NAVYU_PLANNER__BASE_GLOBAL_PLANNER_HPP_
+#endif  // NAVYU_PLANNER__BASE_PLANNER_HPP_

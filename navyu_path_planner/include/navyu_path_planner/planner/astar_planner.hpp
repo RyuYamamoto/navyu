@@ -15,8 +15,8 @@
 #ifndef NAVYU_PLANNER__ASTAR_PLANNER_HPP_
 #define NAVYU_PLANNER__ASTAR_PLANNER_HPP_
 
-#include "navyu_path_planner/base_global_planner.hpp"
-#include "navyu_path_planner/node.hpp"
+#include "navyu_path_planner/planner/base_planner.hpp"
+#include "navyu_path_planner/planner/node.hpp"
 
 #include <Eigen/Core>
 
@@ -28,11 +28,11 @@
 #include <unordered_map>
 #include <vector>
 
-class AstarPlanner : public BaseGlobalPlanner
+class AstarPlanner : public BasePlanner
 {
 public:
   AstarPlanner(int size_x, int size_y, double resolution, double origin_x, double origin_y)
-  : BaseGlobalPlanner(size_x, size_y, resolution, origin_x, origin_y)
+  : BasePlanner(size_x, size_y, resolution, origin_x, origin_y)
   {
   }
   ~AstarPlanner() {}

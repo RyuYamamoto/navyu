@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#ifndef NAVYU_PLANNER__NODE_HPP_
-#define NAVYU_PLANNER__NODE_HPP_
+#ifndef NAVYU_PLANNER__NODE2D_HPP_
+#define NAVYU_PLANNER__NODE2D_HPP_
 
 #include <cmath>
 #include <vector>
@@ -60,4 +60,4 @@ public:
   double f_;
 };
 
-#endif  // NAVYU_PLANNER__NODE_HPP_
+#endif  // NAVYU_PLANNER__NODE2D_HPP_
