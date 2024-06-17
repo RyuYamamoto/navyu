@@ -40,9 +40,16 @@ private:
   std::vector<std::string> plugins_;
   std::map<std::string, std::shared_ptr<Layer>> layer_function_;
 
+  nav_msgs::msg::OccupancyGrid master_costmap_;
+
   double update_frequency_;
-  std::string base_frame_id_;
-  std::string map_frame_id_;
+  std::string global_frame_id_;
+
+  double resolution_;
+  double origin_x_;
+  double origin_y_;
+  int size_x_;
+  int size_y_;
 };
 
 #endif  // NAVYU_COSTMAP_2D__NAVYU_COSTMAP_2D_HPP_

@@ -38,25 +38,17 @@ def generate_launch_description():
                 executable="navyu_costmap_2d_node",
                 name="global_costmap_node",
                 output="screen",
+                remappings=[("/costmap", "/global_costmap")],
                 parameters=[costmap_map_config_path, {"use_sim_time": use_sim_time}],
             ),
             Node(
-                package="nav2_map_server",
-                executable="map_server",
-                name="map_server",
-                parameters=[{"yaml_filename": map_path}, {"frame_id": "map"}],
-            ),
-            Node(
-                package="nav2_lifecycle_manager",
-                executable="lifecycle_manager",
-                name="map_server_lifecycle_manager",
+                package="navyu_costmap_2d",
+                executable="navyu_costmap_2d_node",
+                name="local_costmap_node",
                 output="screen",
-                emulate_tty=True,
-                parameters=[
-                    {"use_sim_time": True},
-                    {"autostart": True},
-                    {"node_names": ["map_server"]},
-                ],
+                remappings=[("/costmap", "/local_costmap")],
+                parameters=[costmap_map_config_path, {"use_sim_time": use_sim_time}],
             ),
+
         ]
     )

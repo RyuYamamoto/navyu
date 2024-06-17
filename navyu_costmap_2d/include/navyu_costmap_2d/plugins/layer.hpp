@@ -36,7 +36,7 @@ public:
     listener_ = listener;
   };
   virtual void configure() = 0;
-  virtual void update(nav_msgs::msg::OccupancyGrid & master_costmap) = 0;
+  virtual bool update(nav_msgs::msg::OccupancyGrid & master_costmap) = 0;
 
 protected:
   rclcpp::Node * node_;

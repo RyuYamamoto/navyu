@@ -56,15 +56,11 @@ public:
 
   void callback(const sensor_msgs::msg::LaserScan::SharedPtr msg) { scan_ = msg; }
 
-  void update(nav_msgs::msg::OccupancyGrid & master_costmap) override
+  bool update(nav_msgs::msg::OccupancyGrid & master_costmap) override
   {
     if (scan_ == nullptr) {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "scan is empty.");
-      return;
-    }
-    if (master_costmap.data.empty()) {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "master costmap is empty.");
-      return;
+      return false;
     }
 
     // scan range filter
@@ -81,7 +77,7 @@ public:
     geometry_msgs::msg::TransformStamped map_to_sensor_frame;
     if (!get_transform(global_frame_, scan_->header.frame_id, map_to_sensor_frame)) {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Can not get frame.");
-      return;
+      return false;
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr laser_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -89,9 +85,13 @@ public:
     pcl::fromROSMsg(cloud_msg, *laser_cloud);
 
     // transform laser cloud
-    const Eigen::Affine3d affine = tf2::transformToEigen(map_to_sensor_frame);
-    const Eigen::Matrix4f matrix = affine.matrix().cast<float>();
-    pcl::transformPointCloud(*laser_cloud, *transform_cloud, matrix);
+    if (scan_->header.frame_id != global_frame_) {
+      const Eigen::Affine3d affine = tf2::transformToEigen(map_to_sensor_frame);
+      const Eigen::Matrix4f matrix = affine.matrix().cast<float>();
+      pcl::transformPointCloud(*laser_cloud, *transform_cloud, matrix);
+    } else {
+      transform_cloud = laser_cloud;
+    }
 
     // get costmap info
     const double resolution = master_costmap.info.resolution;
@@ -99,15 +99,20 @@ public:
     const int height = master_costmap.info.height;
     const double origin_x = master_costmap.info.origin.position.x;
     const double origin_y = master_costmap.info.origin.position.y;
+    master_costmap.data.resize(width * height);
 
     // calculation grid index
     for (auto cloud : transform_cloud->points) {
       const int ix = static_cast<int>((cloud.x - origin_x) / resolution);
       const int iy = static_cast<int>((cloud.y - origin_y) / resolution);
 
-      int index = ix + width * iy;
-      master_costmap.data[index] = LETHAL_COST;
+      if (0 <= ix and ix < width and 0 <= iy and iy < height) {
+        int index = ix + width * iy;
+        master_costmap.data[index] = LETHAL_COST;
+      }
     }
+
+    return true;
   }
 
   bool get_transform(
