@@ -62,7 +62,6 @@ def generate_launch_description():
                 remappings=[("/costmap", "/local_costmap")],
                 parameters=[navyu_config_path, {"use_sim_time": use_sim_time}],
             ),
-
             Node(
                 package="navyu_path_planner",
                 executable="navyu_global_planner_node",

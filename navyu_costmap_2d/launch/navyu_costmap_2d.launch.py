@@ -49,6 +49,5 @@ def generate_launch_description():
                 remappings=[("/costmap", "/local_costmap")],
                 parameters=[costmap_map_config_path, {"use_sim_time": use_sim_time}],
             ),
-
         ]
     )
