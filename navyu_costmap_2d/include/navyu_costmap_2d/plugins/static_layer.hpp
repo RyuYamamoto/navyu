@@ -36,7 +36,15 @@ public:
 
   void callback_map(const nav_msgs::msg::OccupancyGrid::SharedPtr msg) { map_ = *msg; }
 
-  void update(nav_msgs::msg::OccupancyGrid & master_costmap) override { master_costmap = map_; }
+  bool update(nav_msgs::msg::OccupancyGrid & master_costmap) override
+  {
+    if (map_.data.empty()) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "map is empty.");
+      return false;
+    }
+    master_costmap = map_;
+    return true;
+  }
 
 private:
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_subscriber_;

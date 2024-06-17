@@ -30,11 +30,11 @@ public:
     node_->get_parameter("inflation_layer.robot_radius", robot_radius_);
   }
 
-  void update(nav_msgs::msg::OccupancyGrid & master_costmap) override
+  bool update(nav_msgs::msg::OccupancyGrid & master_costmap) override
   {
     if (master_costmap.data.empty()) {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "costmap is empty.");
-      return;
+      return false;
     }
 
     const int size_x = master_costmap.info.width;
@@ -49,11 +49,14 @@ public:
         }
       }
     }
+
+    return true;
   }
 
   void expand_cost(nav_msgs::msg::OccupancyGrid & costmap, const int mx, const int my)
   {
     const int size_x = costmap.info.width;
+    const int size_y = costmap.info.height;
     const double resolution = costmap.info.resolution;
     const int cell_inflation_radius = std::ceil(inflation_radius_ / resolution);
 
@@ -64,18 +67,20 @@ public:
 
     for (int y = min_y; y < max_y; y++) {
       for (int x = min_x; x < max_x; x++) {
-        const double distance = std::hypot(x - mx, y - my);
-        const int index = x + size_x * y;
-        const auto old_cost = costmap.data[index];
+        if (0 <= x and x < size_x and 0 <= y and y < size_y) {
+          const double distance = std::hypot(x - mx, y - my);
+          const int index = x + size_x * y;
+          const auto old_cost = costmap.data[index];
 
-        if (distance * resolution < robot_radius_) {
-          costmap.data[index] = std::max(INSCRIBED_COST, old_cost);
-        } else {
-          if (cell_inflation_radius < distance) continue;
-          if (costmap.data[index] == -1) continue;
-          const int8_t new_cost =
-            std::exp(-1 * 3.0 * (distance * resolution - robot_radius_)) * INSCRIBED_COST - 1;
-          costmap.data[index] = std::max(new_cost, old_cost);
+          if (distance * resolution < robot_radius_) {
+            costmap.data[index] = std::max(INSCRIBED_COST, old_cost);
+          } else {
+            if (cell_inflation_radius < distance) continue;
+            if (costmap.data[index] == -1) continue;
+            const int8_t new_cost =
+              std::exp(-1 * 3.0 * (distance * resolution - robot_radius_)) * INSCRIBED_COST - 1;
+            costmap.data[index] = std::max(new_cost, old_cost);
+          }
         }
       }
     }

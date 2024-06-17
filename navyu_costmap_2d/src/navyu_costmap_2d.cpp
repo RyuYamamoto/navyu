@@ -25,8 +25,21 @@ NavyuCostmap2D::NavyuCostmap2D(const rclcpp::NodeOptions & node_options)
 : Node("navyu_costmap_2d", node_options)
 {
   update_frequency_ = declare_parameter<double>("update_frequency");
-  base_frame_id_ = declare_parameter<std::string>("base_frame_id");
-  map_frame_id_ = declare_parameter<std::string>("map_frame_id");
+  global_frame_id_ = declare_parameter<std::string>("global_frame_id");
+
+  resolution_ = declare_parameter<double>("resolution", 0.05);
+  origin_x_ = declare_parameter<double>("origin_x", 0.0);
+  origin_y_ = declare_parameter<double>("origin_y", 0.0);
+  size_x_ = declare_parameter<int>("width", 5);
+  size_y_ = declare_parameter<int>("height", 5);
+
+  master_costmap_.header.frame_id = global_frame_id_;
+  master_costmap_.info.resolution = resolution_;
+  master_costmap_.info.width = static_cast<int32_t>(size_x_ / resolution_);
+  master_costmap_.info.height = static_cast<int32_t>(size_y_ / resolution_);
+  master_costmap_.info.origin.position.x = origin_x_ - static_cast<double>(size_x_) / 2.0;
+  master_costmap_.info.origin.position.y = origin_y_ - static_cast<double>(size_y_) / 2.0;
+  master_costmap_.data.resize(master_costmap_.info.width * master_costmap_.info.height);
 
   plugins_ = declare_parameter<std::vector<std::string>>("plugins");
 
@@ -61,22 +74,24 @@ NavyuCostmap2D::~NavyuCostmap2D()
 
 void NavyuCostmap2D::update()
 {
-  nav_msgs::msg::OccupancyGrid master_costmap;
+  master_costmap_.data.clear();
 
   // update costmap
   for (auto & plugin : plugins_) {
-    layer_function_[plugin]->update(master_costmap);
+    if (!layer_function_[plugin]->update(master_costmap_)) {
+      RCLCPP_ERROR_STREAM(get_logger(), "Can not update costmap. " << plugin.c_str());
+      return;
+    }
   }
 
-  if (master_costmap.data.empty()) {
+  if (master_costmap_.data.empty()) {
     RCLCPP_ERROR_STREAM(get_logger(), "master costmap is empty");
     return;
   }
 
-  master_costmap.header.stamp = now();
-  master_costmap.header.frame_id = map_frame_id_;
+  master_costmap_.header.stamp = now();
 
-  costmap_publisher_->publish(master_costmap);
+  costmap_publisher_->publish(master_costmap_);
 }
 
 #include "rclcpp_components/register_node_macro.hpp"

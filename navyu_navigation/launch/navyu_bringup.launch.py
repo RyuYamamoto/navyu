@@ -52,12 +52,21 @@ def generate_launch_description():
                 package="navyu_costmap_2d",
                 executable="navyu_costmap_2d_node",
                 name="navyu_global_costmap_node",
+                remappings=[("/costmap", "/global_costmap")],
+                parameters=[navyu_config_path, {"use_sim_time": use_sim_time}],
+            ),
+            Node(
+                package="navyu_costmap_2d",
+                executable="navyu_costmap_2d_node",
+                name="navyu_local_costmap_node",
+                remappings=[("/costmap", "/local_costmap")],
                 parameters=[navyu_config_path, {"use_sim_time": use_sim_time}],
             ),
             Node(
                 package="navyu_path_planner",
                 executable="navyu_global_planner_node",
                 name="navyu_global_planner_node",
+                remappings=[("/costmap", "/global_costmap")],
                 parameters=[navyu_config_path, {"use_sim_time": use_sim_time}],
             ),
             Node(
