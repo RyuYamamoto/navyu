@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Grid1
-        - /Local Costmap1/Status1
         - /Local Costmap1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 1079
@@ -250,7 +249,7 @@ Visualization Manager:
     - Alpha: 0.699999988079071
       Class: rviz_default_plugins/Map
       Color Scheme: costmap
-      Draw Behind: false
+      Draw Behind: true
       Enabled: true
       Name: Global Costmap
       Topic:
@@ -458,11 +457,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 124.54267883300781
+      Scale: 156.22634887695312
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.049617052078247
-      Y: -0.3355798125267029
+      X: 1.2739816904067993
+      Y: -0.17563483119010925
     Saved: ~
 Window Geometry:
   Displays:

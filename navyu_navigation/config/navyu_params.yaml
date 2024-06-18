@@ -16,8 +16,8 @@ navyu_global_costmap_node:
 
 navyu_local_costmap_node:
   ros__parameters:
-    update_frequency: 1.0
-    global_frame_id: base_link
+    update_frequency: 5.0
+    global_frame_id: odom
     width: 5
     height: 5
     resolution: 0.05
@@ -27,7 +27,8 @@ navyu_local_costmap_node:
       robot_radius: 0.22
     dynamic_layer:
       scan_topic: scan
-      global_frame: base_link
+      global_frame: odom
+      update_map_origin: true
       min_laser_range: 0.0
       max_laser_range: 5.0
 
