@@ -42,6 +42,8 @@ public:
     min_laser_range_ = node_->declare_parameter<double>("dynamic_layer.min_laser_range");
     max_laser_range_ = node_->declare_parameter<double>("dynamic_layer.max_laser_range");
 
+    update_map_origin_ = node_->declare_parameter<bool>("dynamic_layer.update_map_origin", false);
+
     global_frame_ = node_->declare_parameter<std::string>("dynamic_layer.global_frame");
     const std::string scan_topic =
       node_->declare_parameter<std::string>("dynamic_layer.scan_topic");
@@ -74,10 +76,20 @@ public:
     projection_.projectLaser(*scan_, cloud_msg);
 
     // get robot pose
-    geometry_msgs::msg::TransformStamped map_to_sensor_frame;
-    if (!get_transform(global_frame_, scan_->header.frame_id, map_to_sensor_frame)) {
+    geometry_msgs::msg::TransformStamped transform_frame;
+    if (!get_transform(global_frame_, scan_->header.frame_id, transform_frame)) {
       RCLCPP_ERROR_STREAM(node_->get_logger(), "Can not get frame.");
       return false;
+    }
+
+    // update map origin
+    if (update_map_origin_) {
+      const double size_x = master_costmap.info.width * master_costmap.info.resolution;
+      const double size_y = master_costmap.info.height * master_costmap.info.resolution;
+      master_costmap.info.origin.position.x =
+        transform_frame.transform.translation.x - size_x / 2.0;
+      master_costmap.info.origin.position.y =
+        transform_frame.transform.translation.y - size_y / 2.0;
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr laser_cloud(new pcl::PointCloud<pcl::PointXYZ>);
@@ -86,7 +98,7 @@ public:
 
     // transform laser cloud
     if (scan_->header.frame_id != global_frame_) {
-      const Eigen::Affine3d affine = tf2::transformToEigen(map_to_sensor_frame);
+      const Eigen::Affine3d affine = tf2::transformToEigen(transform_frame);
       const Eigen::Matrix4f matrix = affine.matrix().cast<float>();
       pcl::transformPointCloud(*laser_cloud, *transform_cloud, matrix);
     } else {
@@ -141,6 +153,8 @@ private:
 
   double min_laser_range_;
   double max_laser_range_;
+
+  bool update_map_origin_;
 };
 
 #endif
