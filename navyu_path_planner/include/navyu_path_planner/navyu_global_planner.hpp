@@ -17,6 +17,7 @@
 
 #include "navyu_path_planner/astar_planner.hpp"
 #include "navyu_path_planner/smoother.hpp"
+#include "navyu_utils/navyu_utils.hpp"
 
 #include <rclcpp/rclcpp.hpp>
 
@@ -43,8 +44,6 @@ public:
   void callback_goal_pose(const geometry_msgs::msg::PoseStamped & msg);
 
   void publish_path(std::vector<Node2D *> path);
-
-  bool get_robot_pose(geometry_msgs::msg::Pose & robot_pose);
 
 private:
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_subscriber_;

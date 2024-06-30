@@ -49,14 +49,6 @@ NavyuPathTracker::~NavyuPathTracker()
 {
 }
 
-double NavyuPathTracker::calculation_distance(
-  const geometry_msgs::msg::Pose p1, const geometry_msgs::msg::Pose p2)
-{
-  const double dx = p1.position.x - p2.position.x;
-  const double dy = p1.position.y - p2.position.y;
-  return std::hypot(dx, dy);
-}
-
 void NavyuPathTracker::publish_velocity_command(const double v, const double w)
 {
   geometry_msgs::msg::Twist twist;
@@ -95,7 +87,8 @@ void NavyuPathTracker::process()
   // nearest path point from robot pose
   std::vector<double> distance_list;
   for (std::size_t idx = 0; idx < path_.poses.size(); idx++) {
-    distance_list.emplace_back(calculation_distance(robot_pose, path_.poses[idx].pose));
+    distance_list.emplace_back(
+      navyu_utils::calculation_distance(robot_pose, path_.poses[idx].pose));
   }
   auto itr = std::min_element(distance_list.begin(), distance_list.end());
 
@@ -120,10 +113,11 @@ void NavyuPathTracker::process()
   auto target_point = path_.poses[target_point_index].pose.position;
 
   // update steer
-  geometry_msgs::msg::Vector3 euler = convert_quaternion_to_euler(robot_pose.orientation);
+  geometry_msgs::msg::Vector3 euler =
+    quaternion_utils::convert_quaternion_to_euler(robot_pose.orientation);
   const double dx = target_point.x - robot_pose.position.x;
   const double dy = target_point.y - robot_pose.position.y;
-  double alpha = normalized(std::atan2(dy, dx) - euler.z);
+  double alpha = navyu_utils::normalized_radian(std::atan2(dy, dx) - euler.z);
 
   if (!adjust_yaw_angle_) {
     if (std::fabs(alpha) < yaw_tolerance_) adjust_yaw_angle_ = true;

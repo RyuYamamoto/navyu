@@ -12,21 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License
 
-#ifndef NAVYU_SIMULATOR__QUATERNION_UTILS_HPP_
-#define NAVYU_SIMULATOR__QUATERNION_UTILS_HPP_
-
-#include <Eigen/Core>
-#include <tf2_eigen/tf2_eigen.hpp>
-
-#include <geometry_msgs/msg/detail/quaternion__struct.hpp>
-#include <geometry_msgs/msg/quaternion.hpp>
-#include <geometry_msgs/msg/vector3.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
-#include <tf2/LinearMath/Quaternion.h>
+#include "navyu_utils/quaternion_utils.hpp"
 
 namespace quaternion_utils
 {
+
 geometry_msgs::msg::Quaternion convert_euler_to_quaternion(const geometry_msgs::msg::Vector3 euler)
 {
   tf2::Quaternion tf2_quat;
@@ -83,5 +73,3 @@ Eigen::Matrix3f get_rotation_matrix_from_quaternion(const geometry_msgs::msg::Qu
 }
 
 }  // namespace quaternion_utils
-
-#endif  // NAVYU_SIMULATOR__QUATERNION_UTILS_HPP_

@@ -15,6 +15,9 @@
 #ifndef NAVYU_PATH_TRACEKR__NAVYU_PATH_TRACKER_HPP_
 #define NAVYU_PATH_TRACEKR__NAVYU_PATH_TRACKER_HPP_
 
+#include "navyu_utils/navyu_utils.hpp"
+#include "navyu_utils/quaternion_utils.hpp"
+
 #include <rclcpp/rclcpp.hpp>
 
 #include <geometry_msgs/msg/pose.hpp>
@@ -42,9 +45,6 @@ public:
 
   void publish_velocity_command(const double v, const double w);
 
-  double calculation_distance(
-    const geometry_msgs ::msg::Pose p1, const geometry_msgs::msg::Pose p2);
-
   visualization_msgs::msg::Marker create_marker(
     const geometry_msgs::msg::Pose pose, const geometry_msgs::msg::Vector3 scale,
     const std_msgs::msg::ColorRGBA color);
@@ -66,26 +66,6 @@ public:
     scale.y = y;
     scale.z = z;
     return scale;
-  }
-  inline geometry_msgs::msg::Vector3 convert_quaternion_to_euler(
-    const geometry_msgs::msg::Quaternion quaternion)
-  {
-    geometry_msgs::msg::Vector3 euler;
-
-    tf2::Quaternion quat(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
-    tf2::Matrix3x3 matrix(quat);
-    matrix.getRPY(euler.x, euler.y, euler.z);
-
-    return euler;
-  }
-  inline double normalized(const double radian)
-  {
-    double normalized_radian = radian;
-    if (M_PI < radian)
-      normalized_radian -= 2.0 * M_PI;
-    else if (radian < -M_PI)
-      normalized_radian += 2.0 * M_PI;
-    return normalized_radian;
   }
 
 private:
