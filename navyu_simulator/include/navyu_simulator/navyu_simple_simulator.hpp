@@ -50,8 +50,6 @@ public:
     const geometry_msgs::msg::Pose pose, const std::string base_frame,
     const std::string child_frame, const rclcpp::Time stamp);
 
-  void get_transform();
-
 private:
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_subscriber_;
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr

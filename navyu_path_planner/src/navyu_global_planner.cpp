@@ -45,27 +45,6 @@ NavyuGlobalPlanner::~NavyuGlobalPlanner()
 {
 }
 
-bool NavyuGlobalPlanner::get_robot_pose(geometry_msgs::msg::Pose & robot_pose)
-{
-  geometry_msgs::msg::TransformStamped robot_pose_frame;
-
-  try {
-    robot_pose_frame = tf_buffer_.lookupTransform(
-      map_frame_, base_frame_, tf2::TimePointZero, tf2::durationFromSec(0.5));
-  } catch (tf2::TransformException & ex) {
-    RCLCPP_ERROR_STREAM(
-      get_logger(), "Can not get Transform " << map_frame_ << " to " << base_frame_);
-    return false;
-  }
-
-  robot_pose.position.x = robot_pose_frame.transform.translation.x;
-  robot_pose.position.y = robot_pose_frame.transform.translation.y;
-  robot_pose.position.z = robot_pose_frame.transform.translation.z;
-  robot_pose.orientation = robot_pose_frame.transform.rotation;
-
-  return true;
-}
-
 bool NavyuGlobalPlanner::plan(
   const geometry_msgs::msg::Pose start, const geometry_msgs::msg::Pose goal,
   std::vector<Node2D *> & path)
@@ -115,7 +94,7 @@ void NavyuGlobalPlanner::callback_goal_pose(const geometry_msgs::msg::PoseStampe
   }
 
   geometry_msgs::msg::Pose start;
-  if (!get_robot_pose(start)) {
+  if (!navyu_utils::get_robot_pose(map_frame_, base_frame_, tf_buffer_, start)) {
     RCLCPP_ERROR_STREAM(get_logger(), "Can not get Robot Pose.");
     return;
   }

@@ -14,7 +14,7 @@
 
 #include "navyu_simulator/navyu_simple_simulator.hpp"
 
-#include "navyu_simulator/quaternion_utils.hpp"
+#include "navyu_utils/quaternion_utils.hpp"
 
 #include <kdl/frames.hpp>
 #include <rclcpp/clock.hpp>
