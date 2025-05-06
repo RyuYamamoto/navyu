@@ -48,7 +48,8 @@ public:
     const std::string scan_topic =
       node_->declare_parameter<std::string>("dynamic_layer.scan_topic");
     scan_subscriber_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-      scan_topic, 10, std::bind(&DynamicLayer::callback, this, std::placeholders::_1));
+      scan_topic, rclcpp::SensorDataQoS().keep_last(10),
+      std::bind(&DynamicLayer::callback, this, std::placeholders::_1));
   }
 
   void pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)

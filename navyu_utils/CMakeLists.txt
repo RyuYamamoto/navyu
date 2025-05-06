@@ -22,6 +22,14 @@ ament_auto_add_library(quaternion_utils SHARED
   src/quaternion_utils.cpp
 )
 
+ament_auto_add_library(costmap_helper SHARED
+  src/costmap_helper.cpp
+)
+
+ament_auto_add_library(visualization_utils SHARED
+  src/visualization_utils.cpp
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()

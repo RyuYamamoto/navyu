@@ -15,14 +15,22 @@
 #ifndef NAVYU_SAFETY_LIMITER__NAVYU_SAFETY_LIMITER_HPP_
 #define NAVYU_SAFETY_LIMITER__NAVYU_SAFETY_LIMITER_HPP_
 
+#include "navyu_utils/costmap_helper.hpp"
+#include "navyu_utils/navyu_utils.hpp"
+#include "navyu_utils/visualization_utils.hpp"
+
 #include <laser_geometry/laser_geometry.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <tf2/utils.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 
 #include <geometry_msgs/msg/polygon.hpp>
 #include <geometry_msgs/msg/polygon_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <nav_msgs/msg/path.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
@@ -32,6 +40,8 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+
+#include <algorithm>
 
 enum Type {
   STOP = 0,
@@ -81,40 +91,58 @@ public:
   explicit NavyuSafetyLimiter(const rclcpp::NodeOptions & node_options);
   ~NavyuSafetyLimiter();
 
-  void callback_laser_scan(const sensor_msgs::msg::LaserScan::SharedPtr msg);
-  void callback_cmd_vel(const geometry_msgs::msg::Twist msg);
+  void process();
 
-  geometry_msgs::msg::Polygon create_polygon(std::vector<double> vertex);
+  void callback_cmd_vel(const geometry_msgs::msg::Twist::SharedPtr msg);
+  void callback_costmap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
 
-  bool check_collision_points_in_polygon(
-    const geometry_msgs::msg::Polygon polygon,
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr collison_points);
+  void publish_debug_marker(
+    const bool & has_collision, const double & collision_distance,
+    const std::vector<geometry_msgs::msg::Pose> & predict_poses);
+
+  // collision check simulation
+  bool predict(
+    const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Twist & cmd_vel_in,
+    double & collision_distance, std::vector<geometry_msgs::msg::Pose> & predict_poses);
+
+  geometry_msgs::msg::Polygon create_foot_print(std::vector<double> vertex);
 
   bool get_transform(
     const std::string target_frame, const std::string source_frame,
     geometry_msgs::msg::TransformStamped & frame);
 
+  geometry_msgs::msg::Polygon transform_foot_print(
+    const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Polygon & foot_print);
+
 private:
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_subscriber_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_in_subscriber_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_subscriber_;
+  rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr predict_path_publisher_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_out_publisher_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr current_state_marker_publisher_;
-  std::map<std::string, PolygonPublisher> polygon_pubilsher_;
+  rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr stop_wall_marker_publisher_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr foot_print_publisher_;
+
+  rclcpp::TimerBase::SharedPtr timer_;
 
   tf2_ros::Buffer tf_buffer_{get_clock()};
   tf2_ros::TransformListener listener_{tf_buffer_};
 
-  laser_geometry::LaserProjection projection_;
-
   geometry_msgs::msg::Twist cmd_vel_in_;
 
-  std::vector<Polygon> polygons_;
+  std::shared_ptr<CostmapHelper> costmap_;
+
+  geometry_msgs::msg::Polygon foot_print_;
 
   std::string base_frame_;
-  double slowdown_ratio_;
-  int collision_points_threshold_in_polygon_;
 
-  std::string current_state_{""};
+  int predict_step_;
+  double predict_time_;
+  double foot_print_radius_;
+  double margin_;
+  double alpha_;
+
+  bool use_radius_foot_print_;
 };
 
 #endif
