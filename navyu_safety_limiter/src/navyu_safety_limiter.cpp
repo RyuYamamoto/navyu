@@ -17,56 +17,181 @@
 NavyuSafetyLimiter::NavyuSafetyLimiter(const rclcpp::NodeOptions & node_options)
 : Node("navyu_safety_limiter", node_options)
 {
-  base_frame_ = declare_parameter<std::string>("base_frame");
-  slowdown_ratio_ = declare_parameter<double>("slowdown_ratio");
-  collision_points_threshold_in_polygon_ =
-    declare_parameter<int>("collision_points_threshold_in_polygon");
+  base_frame_ = this->declare_parameter<std::string>("base_frame");
 
-  std::vector<double> slowdown_polygon =
-    this->declare_parameter<std::vector<double>>("slowdown_polygon");
-  std::vector<double> stop_polygon = this->declare_parameter<std::vector<double>>("stop_polygon");
+  use_radius_foot_print_ = this->declare_parameter<bool>("use_radius_foot_print");
 
-  // initialize polygon
-  Polygon polygon;
-  polygon.robot_radius_ = declare_parameter<double>("robot_radius");
-  polygon.length_ = declare_parameter<double>("length");
-  polygon.scale_ = declare_parameter<double>("scale");
+  predict_step_ = this->declare_parameter<int>("predict_step");
+  predict_time_ = this->declare_parameter<double>("predict_time");
+  margin_ = this->declare_parameter<double>("margin");
+  alpha_ = this->declare_parameter<double>("alpha");
 
-  // slowdown
-  polygon.name_ = "slowdown_polygon";
-  polygon.type_ = SLOWDOWN;
-  polygon.update_dynamic_ = true;
-  polygon.polygon_ = create_polygon(slowdown_polygon);
-  polygons_.emplace_back(polygon);
-  // stop
-  polygon.name_ = "stop_polygon";
-  polygon.type_ = STOP;
-  polygon.update_dynamic_ = false;
-  polygon.polygon_ = create_polygon(stop_polygon);
-  polygons_.emplace_back(polygon);
+  foot_print_radius_ = this->declare_parameter<double>("foot_print_radius");
+  std::vector<double> foot_print = this->declare_parameter<std::vector<double>>("foot_print");
+  foot_print_ = create_foot_print(foot_print);
+
+  costmap_ = std::make_shared<CostmapHelper>();
 
   // create subscriber
-  scan_subscriber_ = create_subscription<sensor_msgs::msg::LaserScan>(
-    "scan", 10, std::bind(&NavyuSafetyLimiter::callback_laser_scan, this, std::placeholders::_1));
   cmd_vel_in_subscriber_ = create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel_in", 10,
     std::bind(&NavyuSafetyLimiter::callback_cmd_vel, this, std::placeholders::_1));
+  costmap_subscriber_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
+    "local_costmap", 10,
+    std::bind(&NavyuSafetyLimiter::callback_costmap, this, std::placeholders::_1));
 
   // create publisher
-  cmd_vel_out_publisher_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel_out", 10);
+  predict_path_publisher_ = this->create_publisher<nav_msgs::msg::Path>("predict_path", 10);
+  cmd_vel_out_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_out", 10);
+  stop_wall_marker_publisher_ =
+    this->create_publisher<visualization_msgs::msg::Marker>("stop_wall_marker", 10);
   current_state_marker_publisher_ =
     this->create_publisher<visualization_msgs::msg::Marker>("current_state_marker", 5);
-  for (auto polygon : polygons_) {
-    polygon_pubilsher_[polygon.name_] =
-      create_publisher<geometry_msgs::msg::PolygonStamped>(polygon.name_, 10);
-  }
+  foot_print_publisher_ =
+    this->create_publisher<visualization_msgs::msg::MarkerArray>("foot_print", 10);
+
+  const double hz = this->declare_parameter<double>("hz");
+  timer_ = this->create_wall_timer(
+    std::chrono::milliseconds(static_cast<int64_t>(1000.0 / hz)),
+    std::bind(&NavyuSafetyLimiter::process, this));
 }
 
 NavyuSafetyLimiter::~NavyuSafetyLimiter()
 {
 }
 
-geometry_msgs::msg::Polygon NavyuSafetyLimiter::create_polygon(std::vector<double> vertex)
+void NavyuSafetyLimiter::process()
+{
+  if (costmap_->get_costmap() == nullptr) {
+    cmd_vel_out_publisher_->publish(cmd_vel_in_);
+    return;
+  }
+
+  geometry_msgs::msg::Pose robot_pose;
+  if (!navyu_utils::get_robot_pose("map", base_frame_, tf_buffer_, robot_pose)) {
+    RCLCPP_ERROR_STREAM(get_logger(), "Can not get frame.");
+    cmd_vel_out_publisher_->publish(cmd_vel_in_);
+    return;
+  }
+
+  const double linear_velocity = cmd_vel_in_.linear.x;
+  if (
+    std::fabs(linear_velocity) < std::numeric_limits<double>::epsilon() &&
+    std::fabs(cmd_vel_in_.angular.z) < std::numeric_limits<double>::epsilon()) {
+    cmd_vel_out_publisher_->publish(cmd_vel_in_);
+    return;
+  }
+
+  // collision check simulation
+  double collision_distance;
+  std::vector<geometry_msgs::msg::Pose> predict_poses;
+  bool has_collision = predict(robot_pose, cmd_vel_in_, collision_distance, predict_poses);
+
+  auto sgn = [](double val) -> double { return (val > 0.0) ? 1.0 : ((val < 0.0) ? -1.0 : 0.0); };
+
+  const double d_col = std::max(0.0, collision_distance - margin_);
+  const double v_lim =
+    sgn(d_col) * sgn(linear_velocity) * std::sqrt(2.0 * alpha_ * std::fabs(d_col));
+  double w_lim = cmd_vel_in_.angular.z;
+  if (std::numeric_limits<double>::epsilon() < std::abs(linear_velocity)) {
+    w_lim = cmd_vel_in_.angular.z * (v_lim / linear_velocity);
+  }
+  cmd_vel_in_.linear.x = std::min(v_lim, cmd_vel_in_.linear.x);
+  cmd_vel_in_.angular.z = std::min(w_lim, cmd_vel_in_.angular.z);
+
+  // Visualization
+  publish_debug_marker(has_collision, collision_distance, predict_poses);
+
+  // publish target velocity
+  cmd_vel_out_publisher_->publish(cmd_vel_in_);
+}
+
+void NavyuSafetyLimiter::publish_debug_marker(
+  const bool & has_collision, const double & collision_distance,
+  const std::vector<geometry_msgs::msg::Pose> & predict_poses)
+{
+  const auto current_stamp = this->now();
+
+  if (has_collision) {
+    geometry_msgs::msg::Vector3 scale = visualization_utils::create_scale(0.03, 3.0, 1.0);
+    std_msgs::msg::ColorRGBA color = visualization_utils::create_color(1.0, 0.0, 0.0, 0.7);
+    visualization_msgs::msg::Marker stop_wall_marker = visualization_utils::create_cube_marker(
+      current_stamp, "map", predict_poses.back(), scale, color);
+    stop_wall_marker_publisher_->publish(stop_wall_marker);
+
+    std::string text = "Collision:" + visualization_utils::to_string(collision_distance, 2) + "m";
+    scale = visualization_utils::create_scale(1.0, 1.0, 0.3);
+    color = visualization_utils::create_color(1.0, 0.0, 0.0, 1.0);
+    visualization_msgs::msg::Marker text_marker =
+      visualization_utils::create_text_marker(current_stamp, base_frame_, text, scale, color);
+    current_state_marker_publisher_->publish(text_marker);
+  }
+
+  visualization_msgs::msg::MarkerArray foot_print_array;
+  const auto current_time_stamp = this->now();
+  for (std::size_t i = 0; i < predict_poses.size(); i++) {
+    const geometry_msgs::msg::Vector3 scale = visualization_utils::create_scale(0.02, 0.0, 0.0);
+    std_msgs::msg::ColorRGBA color = visualization_utils::create_color(0.0, 0.0, 1.0, 1.0);
+    if (i == predict_poses.size() - 1 && has_collision) {
+      color = visualization_utils::create_color(1.0, 0.0, 0.0, 1.0);
+    }
+    visualization_msgs::msg::Marker foot_print = visualization_utils::create_foot_print_marker(
+      current_time_stamp, "map", i, predict_poses[i], foot_print_, scale, color);
+    foot_print_array.markers.emplace_back(foot_print);
+  }
+
+  foot_print_publisher_->publish(foot_print_array);
+}
+
+bool NavyuSafetyLimiter::predict(
+  const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Twist & cmd_vel_in,
+  double & collision_distance, std::vector<geometry_msgs::msg::Pose> & predict_poses)
+{
+  const double dt = predict_time_ / static_cast<double>(predict_step_);
+  collision_distance = 0.0;
+
+  geometry_msgs::msg::Pose predict_pose = pose;
+  geometry_msgs::msg::Pose last_pose = pose;
+  double yaw = tf2::getYaw(predict_pose.orientation);
+
+  predict_poses.emplace_back(predict_pose);
+
+  bool has_collision = false;
+  for (int i = 0; i < predict_step_; i++) {
+    const double dx =
+      (cmd_vel_in.linear.x * std::cos(yaw) - cmd_vel_in.linear.y * std::sin(yaw)) * dt;
+    const double dy =
+      (cmd_vel_in.linear.x * std::sin(yaw) + cmd_vel_in.linear.y * std::cos(yaw)) * dt;
+    yaw += cmd_vel_in.angular.z * dt;
+
+    collision_distance += std::hypot(dx, dy);
+
+    predict_pose.position.x += dx;
+    predict_pose.position.y += dy;
+    tf2::Quaternion q;
+    q.setRPY(0, 0, yaw);
+    predict_pose.orientation = tf2::toMsg(q);
+
+    int mx, my;
+    if (!costmap_->convert_world_to_map(predict_pose.position.x, predict_pose.position.y, mx, my)) {
+      continue;
+    }
+
+    const geometry_msgs::msg::Polygon foot_print = transform_foot_print(predict_pose, foot_print_);
+    if (costmap_->obstacle_collision_check(foot_print)) {
+      collision_distance -= std::hypot(dx, dy);
+      has_collision = true;
+      break;
+    }
+
+    last_pose = predict_pose;
+    predict_poses.emplace_back(predict_pose);
+  }
+
+  return has_collision;
+}
+
+geometry_msgs::msg::Polygon NavyuSafetyLimiter::create_foot_print(std::vector<double> vertex)
 {
   geometry_msgs::msg::Polygon polygon;
 
@@ -80,76 +205,32 @@ geometry_msgs::msg::Polygon NavyuSafetyLimiter::create_polygon(std::vector<doubl
   return polygon;
 }
 
-bool NavyuSafetyLimiter::check_collision_points_in_polygon(
-  const geometry_msgs::msg::Polygon polygon,
-  const pcl::PointCloud<pcl::PointXYZ>::Ptr collison_points)
+geometry_msgs::msg::Polygon NavyuSafetyLimiter::transform_foot_print(
+  const geometry_msgs::msg::Pose & pose, const geometry_msgs::msg::Polygon & foot_print)
 {
-  int collision_point_num = 0;
-  for (auto point : collison_points->points) {
-    double sum_angle = 0;
-    for (std::size_t idx = 0; idx < polygon.points.size(); ++idx) {
-      const double vec_1_x = polygon.points[idx].x - point.x;
-      const double vec_1_y = polygon.points[idx].y - point.y;
-      const double vec_2_x = polygon.points[(idx + 1) % polygon.points.size()].x - point.x;
-      const double vec_2_y = polygon.points[(idx + 1) % polygon.points.size()].y - point.y;
+  const double x = pose.position.x;
+  const double y = pose.position.y;
+  const double yaw = tf2::getYaw(pose.orientation);
 
-      const double vec_1 = vec_1_x * vec_2_x + vec_1_y * vec_2_y;
-      const double vec_2 = vec_1_y * vec_2_x - vec_1_x * vec_2_y;
-
-      const double angle = std::atan2(vec_2, vec_1);
-      sum_angle += angle;
-    }
-
-    if ((2 * M_PI - std::fabs(sum_angle)) < std::numeric_limits<double>::epsilon())
-      collision_point_num++;
+  geometry_msgs::msg::Polygon new_foot_print;
+  new_foot_print.points.resize(foot_print.points.size());
+  for (std::size_t i = 0; i < foot_print.points.size(); i++) {
+    geometry_msgs::msg::Point32 point;
+    point.x = x + (foot_print.points[i].x * std::cos(yaw) - foot_print.points[i].y * std::sin(yaw));
+    point.y = y + (foot_print.points[i].x * std::sin(yaw) + foot_print.points[i].y * std::cos(yaw));
+    new_foot_print.points[i] = point;
   }
-
-  return (collision_points_threshold_in_polygon_ <= collision_point_num) ? true : false;
+  return new_foot_print;
 }
 
-void NavyuSafetyLimiter::callback_cmd_vel(const geometry_msgs::msg::Twist msg)
+void NavyuSafetyLimiter::callback_costmap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
 {
-  cmd_vel_in_ = msg;
+  costmap_->set_costmap(msg);
+}
 
-  visualization_msgs::msg::Marker text;
-
-  // check collision
-  geometry_msgs::msg::Twist cmd_vel_out = msg;
-
-  if (current_state_ == "Slowdown") {
-    cmd_vel_out.linear.x = slowdown_ratio_ * msg.linear.x;
-    cmd_vel_out.linear.y = slowdown_ratio_ * msg.linear.y;
-    cmd_vel_out.angular.z = slowdown_ratio_ * msg.angular.z;
-    text.color.r = 1.0;
-    text.color.g = 1.0;
-    text.color.b = 0.0;
-  } else if (current_state_ == "Stop") {
-    cmd_vel_out.linear.x = 0.0;
-    cmd_vel_out.linear.y = 0.0;
-    cmd_vel_out.angular.z = 0.0;
-    text.color.r = 1.0;
-    text.color.g = 0.0;
-    text.color.b = 0.0;
-  } else {
-    text.color.r = 1.0;
-    text.color.g = 1.0;
-    text.color.b = 1.0;
-  }
-
-  // visualization safety status
-  text.header.frame_id = base_frame_;
-  text.header.stamp = now();
-  text.ns = "text";
-  text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
-  text.action = visualization_msgs::msg::Marker::ADD;
-  text.pose.position.x = -0.5;
-  text.scale.z = 0.3;
-  text.text = current_state_;
-  text.color.a = 1.0;
-  current_state_marker_publisher_->publish(text);
-
-  // publish filter cmd_vel
-  cmd_vel_out_publisher_->publish(cmd_vel_out);
+void NavyuSafetyLimiter::callback_cmd_vel(const geometry_msgs::msg::Twist::SharedPtr msg)
+{
+  cmd_vel_in_ = *msg;
 }
 
 bool NavyuSafetyLimiter::get_transform(
@@ -164,50 +245,6 @@ bool NavyuSafetyLimiter::get_transform(
     return false;
   }
   return true;
-}
-
-void NavyuSafetyLimiter::callback_laser_scan(const sensor_msgs::msg::LaserScan::SharedPtr msg)
-{
-  sensor_msgs::msg::PointCloud2 cloud_msg;
-  projection_.projectLaser(*msg, cloud_msg);
-
-  // convert point cloud from ros msg
-  pcl::PointCloud<pcl::PointXYZ>::Ptr laser_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr transform_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::fromROSMsg(cloud_msg, *laser_cloud);
-
-  geometry_msgs::msg::TransformStamped transform;
-  if (!get_transform(base_frame_, msg->header.frame_id, transform)) {
-    RCLCPP_ERROR_STREAM(get_logger(), "Can not get frame.");
-    return;
-  }
-
-  // transform point cloud
-  const Eigen::Affine3d affine = tf2::transformToEigen(transform);
-  const Eigen::Matrix4f matrix = affine.matrix().cast<float>();
-  pcl::transformPointCloud(*laser_cloud, *transform_cloud, matrix);
-
-  current_state_ = "None";
-
-  // check collision
-  for (auto polygon : polygons_) {
-    geometry_msgs::msg::Polygon dynamic_polygon;
-    dynamic_polygon = polygon.update_polygon(cmd_vel_in_);
-
-    geometry_msgs::msg::PolygonStamped polygon_msg;
-    polygon_msg.header.stamp = now();
-    polygon_msg.header.frame_id = base_frame_;
-    polygon_msg.polygon = dynamic_polygon;
-    polygon_pubilsher_[polygon.name_]->publish(polygon_msg);
-
-    if (!check_collision_points_in_polygon(dynamic_polygon, transform_cloud)) continue;
-
-    if (polygon.type_ == SLOWDOWN) {
-      current_state_ = "Slowdown";
-    } else if (polygon.type_ == STOP) {
-      current_state_ = "Stop";
-    }
-  }
 }
 
 #include "rclcpp_components/register_node_macro.hpp"

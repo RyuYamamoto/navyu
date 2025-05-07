@@ -4,8 +4,6 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Grid1
         - /Local Costmap1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 1079
@@ -270,7 +268,7 @@ Visualization Manager:
     - Alpha: 0.699999988079071
       Class: rviz_default_plugins/Map
       Color Scheme: costmap
-      Draw Behind: false
+      Draw Behind: true
       Enabled: true
       Name: Local Costmap
       Topic:
@@ -363,37 +361,11 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /target_point_marker
       Value: true
-    - Alpha: 1
-      Class: rviz_default_plugins/Polygon
-      Color: 255; 255; 0
-      Enabled: true
-      Name: Slowdown Polygon
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /slowdown_polygon
-      Value: true
-    - Alpha: 1
-      Class: rviz_default_plugins/Polygon
-      Color: 255; 0; 0
-      Enabled: true
-      Name: Stop Polygon
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /stop_polygon
-      Value: true
     - Class: rviz_default_plugins/Marker
       Enabled: true
       Name: Safety Status
       Namespaces:
-        {}
+        text: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -401,6 +373,31 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /current_state_marker
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: Foot Print
+      Namespaces:
+        footprint: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /foot_print
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Stop Wall
+      Namespaces:
+        "": true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /stop_wall_marker
       Value: true
   Enabled: true
   Global Options:
@@ -457,11 +454,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 156.22634887695312
+      Scale: 122.58013153076172
       Target Frame: base_link
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 1.2739816904067993
-      Y: -0.17563483119010925
+      X: 3.63504958152771
+      Y: -0.2461022138595581
     Saved: ~
 Window Geometry:
   Displays:
@@ -480,4 +477,4 @@ Window Geometry:
     collapsed: true
   Width: 1697
   X: 46
-  Y: 973
+  Y: 27

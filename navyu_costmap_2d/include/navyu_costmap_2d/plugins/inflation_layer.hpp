@@ -78,7 +78,7 @@ public:
             if (cell_inflation_radius < distance) continue;
             if (costmap.data[index] == -1) continue;
             const int8_t new_cost =
-              std::exp(-1 * 3.0 * (distance * resolution - robot_radius_)) * INSCRIBED_COST - 1;
+              std::exp(-1 * 3.0 * (distance * resolution - robot_radius_)) * (INSCRIBED_COST - 1);
             costmap.data[index] = std::max(new_cost, old_cost);
           }
         }
