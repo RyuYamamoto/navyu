@@ -62,7 +62,7 @@ public:
   bool update(nav_msgs::msg::OccupancyGrid & master_costmap) override
   {
     if (scan_ == nullptr) {
-      RCLCPP_ERROR_STREAM(node_->get_logger(), "scan is empty.");
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "scan message is nullptr.");
       return false;
     }
 
@@ -75,7 +75,10 @@ public:
     // convert laser scan to point cloud msg
     sensor_msgs::msg::PointCloud2 cloud_msg, transform_cloud_msg;
     projection_.projectLaser(*scan_, cloud_msg);
-
+    if (cloud_msg.data.empty()) {
+      RCLCPP_ERROR_STREAM(node_->get_logger(), "scan is empty.");
+      return false;
+    }
     // get robot pose
     geometry_msgs::msg::TransformStamped transform_frame;
     if (!get_transform(global_frame_, scan_->header.frame_id, transform_frame)) {
